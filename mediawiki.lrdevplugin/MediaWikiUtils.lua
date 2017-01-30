@@ -111,8 +111,62 @@ MediaWikiUtils.setExportKeyword = function(tag)
 	prefs.export_keyword = tag
 end
 
+MediaWikiUtils.getCategoryNamespaceName = function()
+	return prefs.category_namespace_name or 'Category'
+end
+
+MediaWikiUtils.setCategoryNamespaceName = function(category_namespace_name)
+	prefs.category_namespace_name = category_namespace_name
+end
+
 MediaWikiUtils.trace = function(message)
 	myLogger:trace(message)
+end
+
+-- Wait for a global variable that may not have been initialized yet. If it is nil, wait.
+-- Times out after 'timeout' seconds (or 3 s, if only one argument is passed)
+-- Returns the number of seconds which were waited (for debug/monitoring purposes) or false
+-- if the timeout was reached and the variable name still didn't exist.
+-- Based on https://forums.adobe.com/message/9177696#9177696
+MediaWikiUtils.waitForGlobal = function(globalName, timeoutPar)
+	local sleepTimer = 0;
+	local LrTasks = import 'LrTasks';
+	local timeout = (timeoutPar ~= nil) and timeoutPar or 3;
+	while (_G[globalName] == nil) and (sleepTimer < timeout) do
+		LrTasks.sleep(1);
+		sleepTimer = sleepTimer + 1;
+	end
+	return _G[globalName] ~= nil and sleepTimer or false
+end
+
+-- The following functions deal with a category completion list.
+-- The list is retrieved by a call of a web service, using a function of
+-- SDK namespace LrHttp. This function needs to be called inside an
+-- asynchronous task using LrTasks.startAsyncTask().
+-- LrTasks are not able to return a value, therefore the retrieved category
+-- completion list is stored at a global variable "_G.categories".
+-- The list is read by an autocomplete of field "Categories" at export dialog.
+MediaWikiUtils.initCategoryCompletionList = function()
+	_G.categories = {}
+end
+MediaWikiUtils.storeCategoryCompletionList = function(categoryCompletionList)
+	_G.categories = categoryCompletionList
+end
+MediaWikiUtils.readCategoryCompletionList = function()
+	return _G.categories
+end
+MediaWikiUtils.traceCategoryCompletionList = function(context)
+	local msg = context .. ' – stored category completion list:'
+	if _G.categories ~= nil and #_G.categories > 0 then
+		local key = 1
+		while key <= #_G.categories do
+			msg = msg .. '\nKey: ' .. key .. ', value: ' .. _G.categories[key]
+			key = key + 1
+		end
+	else
+		msg = msg .. ' empty list'
+	end
+	MediaWikiUtils.trace(msg)
 end
 
 return MediaWikiUtils

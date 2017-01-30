@@ -19,6 +19,7 @@ local LrDialogs = import 'LrDialogs'
 local LrErrors = import 'LrErrors'
 local LrFunctionContext = import 'LrFunctionContext'
 local LrView = import 'LrView'
+local LrTasks = import 'LrTasks'
 
 local MediaWikiApi = require 'MediaWikiApi'
 local MediaWikiUtils = require 'MediaWikiUtils'
@@ -54,7 +55,7 @@ MediaWikiInterface.loadFileDescriptionTemplate = function(templateName)
 	return result, errorMessage
 end
 
-MediaWikiInterface.prepareUpload = function(username, password, apiPath, templateName)
+MediaWikiInterface.login = function(username, password, apiPath)
 	-- MediaWiki login
 	if username and password then
 		MediaWikiInterface.username = username
@@ -68,6 +69,11 @@ MediaWikiInterface.prepareUpload = function(username, password, apiPath, templat
 	else
 		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Interface/UsernameOrPasswordMissing=Username or password missing')
 	end
+end
+
+MediaWikiInterface.prepareUpload = function(username, password, apiPath, templateName)
+	-- MediaWiki login
+	MediaWikiInterface.login(username, password, apiPath)
 	-- file description
 	local result, message = MediaWikiInterface.loadFileDescriptionTemplate(templateName)
 	if not result then
@@ -130,7 +136,7 @@ MediaWikiInterface.uploadFile = function(filePath, description, hasDescription, 
 
 	local ignorewarnings = false
 	if MediaWikiApi.existsFile(targetFileName) then
-		local continue = LrDialogs.confirm(LOC '$$$/LrMediaWiki/Interface/InUse=File name already in use', LOC('$$$/LrMediaWiki/Interface/InUse/Details=There already is a file with the name ^1.  Overwrite?  (File description won\'t be changed.)', targetFileName), LOC '$$$/LrMediaWiki/Interface/InUse/OK=Overwrite', LOC '$$$/LrMediaWiki/Interface/InUse/Cancel=Cancel', LOC '$$$/LrMediaWiki/Interface/InUse/Rename=Rename')
+		local continue = LrDialogs.confirm(LOC '$$$/LrMediaWiki/Interface/InUse=File name already in use', LOC('$$$/LrMediaWiki/Interface/InUse/Details=There already is a file with the name ^1. Overwrite? (File description won’t be changed.)', targetFileName), LOC '$$$/LrMediaWiki/Interface/InUse/OK=Overwrite', LOC '$$$/LrMediaWiki/Interface/InUse/Cancel=Cancel', LOC '$$$/LrMediaWiki/Interface/InUse/Rename=Rename')
 		if continue == 'ok' then
 			local newComment = MediaWikiInterface.prompt(LOC '$$$/LrMediaWiki/Interface/VersionComment=Version comment', LOC '$$$/LrMediaWiki/Interface/VersionComment=Version comment')
 			if MediaWikiUtils.isStringFilled(newComment) then
@@ -169,14 +175,18 @@ MediaWikiInterface.buildFileDescription = function(exportFields, photo)
 	-- Lua uses a specific set of patterns, no regular expressions.
 	-- Lua patterns reference: <http://www.lua.org/manual/5.1/manual.html#5.4.1>
 	-- (LR 6 uses Lua 5.1.4)
+
+	local formatString = '[[' .. MediaWikiUtils.getCategoryNamespaceName() .. ':%s]]\n'
 	for category in string.gmatch(exportFields.categories, '[^;]+') do
 		if category then
-			categoriesString = categoriesString .. string.format('[[Category:%s]]\n', category)
+			categoriesString = categoriesString .. string.format(formatString, category)
+			-- categoriesString = categoriesString .. string.format('[[Category:%s]]\n', category)
 		end
 	end
 	for category in string.gmatch(exportFields.info_categories, '[^;]+') do
 		if category then
-			categoriesString = categoriesString .. string.format('[[Category:%s]]\n', category)
+			categoriesString = categoriesString .. string.format(formatString, category)
+			-- categoriesString = categoriesString .. string.format('[[Category:%s]]\n', category)
 		end
 	end
 
@@ -224,9 +234,9 @@ MediaWikiInterface.buildFileDescription = function(exportFields, photo)
 	-- See <http://www.fileformat.info/info/unicode/char/200e/index.htm>
 	local count
 	wikitext, count = string.gsub(wikitext, pattern, '')
-	local message = LOC('$$$/LrMediaWiki/Interface/DeletedControlCharacters=Number of deleted control characters: ^1', count)
-	MediaWikiUtils.trace(message)
 	if count > 0 then
+		local message = LOC('$$$/LrMediaWiki/Interface/DeletedControlCharacters=Number of deleted control characters: ^1', count)
+		MediaWikiUtils.trace(message)
 		LrDialogs.showBezel(message, 5) -- 5: fade delay in seconds
 		MediaWikiUtils.trace(message)
 	end
@@ -250,6 +260,16 @@ MediaWikiInterface.buildFileDescription = function(exportFields, photo)
 	wikitext = MediaWikiUtils.substituteVariables(wikitext, arguments)
 
 	return wikitext
+end
+
+MediaWikiInterface.categoryCompletion = function(username, password, apiPath, userInput)
+	-- The category completetion calls a web service to determine the category
+	-- proposals. To do so, a method of SDK namespace LrHttp is used, which can
+	-- only be called within an asynchronous task.
+	LrTasks.startAsyncTask(function()
+		MediaWikiInterface.login(username, password, apiPath)
+		MediaWikiApi.categoryCompletion(userInput)
+	end)
 end
 
 return MediaWikiInterface

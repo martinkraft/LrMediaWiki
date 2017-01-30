@@ -110,7 +110,9 @@ function MediaWikiApi.performHttpRequest(path, arguments, requestHeaders, post)
 end
 
 function MediaWikiApi.performRequest(arguments)
-	arguments.format = 'xml'
+	if arguments.format ~= 'json' then
+		arguments.format = 'xml'
+	end
 	local requestHeaders = {
 		{
 			field = 'User-Agent',
@@ -123,11 +125,16 @@ function MediaWikiApi.performRequest(arguments)
 	}
 
 	local resultBody = MediaWikiApi.performHttpRequest(MediaWikiApi.apiPath, arguments, requestHeaders, true)
-	local resultXml = MediaWikiApi.parseXmlDom(LrXml.parseXml(resultBody))
-	if resultXml.error then
-		LrErrors.throwUserError(LOC('$$$/LrMediaWiki/Api/MediaWikiError=The MediaWiki error ^1 occured: ^2', resultXml.error.code, resultXml.error.info))
+	local result
+	if arguments.format == 'xml' then
+		result = MediaWikiApi.parseXmlDom(LrXml.parseXml(resultBody))
+		if result.error then
+			LrErrors.throwUserError(LOC('$$$/LrMediaWiki/Api/MediaWikiError=The MediaWiki error ^1 occured: ^2', result.error.code, result.error.info))
+		end
+	else -- arguments.format = 'json'
+		result = resultBody
 	end
-	return resultXml
+	return result
 end
 
 function MediaWikiApi.getCurrentPluginVersion()
@@ -215,6 +222,7 @@ function MediaWikiApi.login(username, password)
 		xml = MediaWikiApi.performRequest(arguments)
 		local loginResult = xml.clientlogin.status
 		if loginResult == 'PASS' then
+			MediaWikiApi.setCategoryNamespaceName()
 			return true
 		else
 			return xml.clientlogin.message
@@ -230,6 +238,7 @@ function MediaWikiApi.login(username, password)
 		xml = MediaWikiApi.performRequest(arguments)
 		local loginResult = xml.login.result
 		if loginResult == 'Success' then
+			MediaWikiApi.setCategoryNamespaceName()
 			return true
 		else
 			return xml.login.reason
@@ -243,6 +252,30 @@ function MediaWikiApi.logout()
 		action = 'logout',
 	}
 	MediaWikiApi.performRequest(arguments)
+end
+
+function MediaWikiApi.setCategoryNamespaceName()
+-- Determine localized name of category namespace and cache it
+	local arguments = {
+		action = 'query',
+		meta = 'siteinfo',
+		siprop = 'namespaces',
+		format = 'json',
+	}
+	local resultJson = MediaWikiApi.performRequest(arguments)
+	local result = JSON:decode(resultJson)
+	-- See https://www.mediawiki.org/wiki/API:Siteinfo
+	-- Namespace 14 = Category
+	local categoryName = result['query']['namespaces']['14']['*']
+	local msg = 'Identified name of localized category namespace: '
+	if categoryName ~= nil then
+		msg = msg .. categoryName
+		MediaWikiUtils.setCategoryNamespaceName(categoryName)
+	else
+		msg = msg .. 'None. We use default \"Category\".'
+		MediaWikiUtils.setCategoryNamespaceName('Category')
+	end
+	MediaWikiUtils.trace(msg)
 end
 
 function MediaWikiApi.getEditToken()
@@ -340,6 +373,41 @@ function MediaWikiApi.upload(fileName, sourceFilePath, text, comment, ignoreWarn
 	else
 		return uploadResult
 	end
+end
+
+function MediaWikiApi.categoryCompletion(userInput)
+-- Uses https://www.mediawiki.org/wiki/API:Opensearch
+-- This function is called at export dialog to realize an autocompletion of
+-- user inputs by existing category names.
+	-- First determine localized category prefix, e.g.
+	-- "Category:" (English) or "Kategorie:" (German)
+	local categoryPrefix = MediaWikiUtils.getCategoryNamespaceName() .. ':'
+	local searchCategories = categoryPrefix .. userInput
+	local msg = 'Category completion, searching \"' .. searchCategories .. '\"'
+	MediaWikiUtils.trace(msg)
+	local arguments = {
+		action = 'opensearch',
+		search = searchCategories,
+		format = 'json',
+		-- limit = 10, -- default: 10
+	}
+	local resultJson = MediaWikiApi.performRequest(arguments)
+	local result = JSON:decode(resultJson)
+	local searchKey = result[1] -- type string
+	local searchResults = result[2] -- type table
+	msg = 'Category completion, search key: \"' .. searchKey ..
+			'\", number of search results: ' .. #searchResults
+	MediaWikiUtils.trace(msg)
+	-- Strip category prefix (e.g. "Category:"):
+	if #searchResults > 0 then
+		local key = 1
+		while key <= #searchResults do
+			searchResults[key] = string.gsub(searchResults[key], categoryPrefix, '')
+			key = key + 1
+		end
+	end
+	MediaWikiUtils.storeCategoryCompletionList(searchResults)
+	MediaWikiUtils.traceCategoryCompletionList('MediaWikiApi.categoryCompletion')
 end
 
 return MediaWikiApi

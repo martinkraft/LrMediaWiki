@@ -34,7 +34,22 @@ local MediaWikiUtils = require 'MediaWikiUtils'
 
 local MediaWikiExportServiceProvider = {}
 
-MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext, exportContext)
+MediaWikiExportServiceProvider.checkCredentials = function(username, password)
+	if MediaWikiUtils.isStringEmpty(username) then
+		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoUsername=No username given!')
+	end
+	if MediaWikiUtils.isStringEmpty(password) then
+		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoPassword=No password given!')
+	end
+end
+
+MediaWikiExportServiceProvider.checkApiPath = function(api_path)
+	if MediaWikiUtils.isStringEmpty(api_path) then
+		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoApiPath=No API path given!')
+	end
+end
+
+MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext, exportContext) -- luacheck: ignore
 	-- configure progress display
 	local exportSession = exportContext.exportSession
 	local photoCount = exportSession:countRenditions()
@@ -43,17 +58,12 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 	}
 
 	local exportSettings = assert(exportContext.propertyTable)
+	-- require username, password
+	MediaWikiExportServiceProvider.checkCredentials(exportSettings.username, exportSettings.password)
+	-- require API path
+	MediaWikiExportServiceProvider.checkApiPath(exportSettings.api_path)
 
-	-- require username, password, apipath, source, author, license
-	if MediaWikiUtils.isStringEmpty(exportSettings.username) then
-		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoUsername=No username given!')
-	end
-	if MediaWikiUtils.isStringEmpty(exportSettings.password) then
-		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoPassword=No password given!')
-	end
-	if MediaWikiUtils.isStringEmpty(exportSettings.api_path) then
-		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoApiPath=No API path given!')
-	end
+	-- require source, author, license or permission
 	if exportSettings.info_template == 'Information' and MediaWikiUtils.isStringEmpty(exportSettings.info_source) then
 		LrErrors.throwUserError(LOC '$$$/LrMediaWiki/Export/NoSource=No source given!')
 	end
@@ -70,7 +80,7 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 	local fileNames = {}
 
 	-- iterate over photos
-	for i, rendition in exportContext:renditions() do
+	for i, rendition in exportContext:renditions() do -- luacheck: ignore
 		-- render photo
 		local success, pathOrMessage = rendition:waitForRender()
 		if success then
@@ -136,7 +146,7 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 					local currentDate = LrDate.formatShortDate(currentTimeStamp)
 					local currentTime = LrDate.formatShortTime(currentTimeStamp)
 					local snapshotTitle = LOC('$$$/LrMediaWiki/Export/Snapshot=MediaWiki export, ^1 ^2, ^3', currentDate, currentTime, exportSettings.api_path)
-					catalog:withWriteAccessDo('CreateDevelopSnapshot', function(context)
+					catalog:withWriteAccessDo('CreateDevelopSnapshot', function(context) -- luacheck: ignore
 						photo:createDevelopSnapshot(snapshotTitle, true)
 					end)
 				end
@@ -144,7 +154,7 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 				-- add configured export keyword
 				local keyword = MediaWikiUtils.getExportKeyword()
 				if MediaWikiUtils.isStringFilled(keyword) then
-					catalog:withWriteAccessDo('AddExportKeyword', function(context)
+					catalog:withWriteAccessDo('AddExportKeyword', function(context) -- luacheck: ignore
 						photo:addKeyword(catalog:createKeyword(keyword, {}, false, nil, true))
 					end)
 				end
@@ -166,12 +176,14 @@ end
 
 MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, propertyTable)
 	local labelAlignment = 'right';
-	local widthLong = 57;
+	local widthLong = 54;
 	local widthLoginEditField = widthLong + 2;
+	local titleEditCategories = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/ExtendedCategoriesButton=Edit categories with autocompletion'
+	local labelEditCategories = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Categories=Categories^nseparated by ;'
 
 	return {
 		{
-			title = LOC '$$$/LrMediaWiki/Section/User/Title=Login Information',
+			title = LOC '$$$/LrMediaWiki/Export/SectionLoginInformation/Title=Login Information',
 			synopsis = bind 'username',
 
 			viewFactory:column {
@@ -180,7 +192,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 				viewFactory:row {
 					spacing = viewFactory:label_spacing(),
 					viewFactory:static_text {
-						title = LOC '$$$/LrMediaWiki/Section/User/Username=Username',
+						title = LOC '$$$/LrMediaWiki/Export/SectionLoginInformation/Username=Username',
 						alignment = labelAlignment,
 						width = LrView.share 'label_width',
 					},
@@ -194,7 +206,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 				viewFactory:row {
 					spacing = viewFactory:label_spacing(),
 					viewFactory:static_text {
-						title = LOC '$$$/LrMediaWiki/Section/User/Password=Password',
+						title = LOC '$$$/LrMediaWiki/Export/SectionLoginInformation/Password=Password',
 						alignment = labelAlignment,
 						width = LrView.share 'label_width',
 					},
@@ -207,7 +219,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 				viewFactory:row {
 					spacing = viewFactory:label_spacing(),
 					viewFactory:static_text {
-						title = LOC '$$$/LrMediaWiki/Section/User/ApiPath=API path',
+						title = LOC '$$$/LrMediaWiki/Export/SectionLoginInformation/ApiPath=API path',
 						alignment = labelAlignment,
 						width = LrView.share 'label_width',
 					},
@@ -221,7 +233,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 				viewFactory:row {
 					spacing = viewFactory:label_spacing(),
 					viewFactory:static_text {
-						title = LOC '$$$/LrMediaWiki/Section/User/Gallery=Gallery',
+						title = LOC '$$$/LrMediaWiki/Export/SectionLoginInformation/Gallery=Gallery',
 						alignment = labelAlignment,
 						width = LrView.share 'label_width',
 					},
@@ -234,7 +246,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 			},
 		},
 		{
-			title = LOC '$$$/LrMediaWiki/Section/Licensing/Title=Upload Information',
+			title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Title=Upload Informations',
 			synopsis = bind 'info_template',
 
 			viewFactory:column {
@@ -242,7 +254,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 				viewFactory:row {
 					spacing = viewFactory:label_spacing(),
 					viewFactory:static_text {
-						title = LOC '$$$/LrMediaWiki/Section/Licensing/InfoboxTemplate=Infobox template',
+						title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/InfoboxTemplate=Infobox template',
 						alignment = labelAlignment,
 						width = LrView.share 'label_width',
 					},
@@ -255,18 +267,18 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 					},
 					-- spacing = viewFactory:label_spacing(),
 					viewFactory:push_button {
-						title = LOC '$$$/LrMediaWiki/Section/Licensing/Preview=Preview generated wikitext',
-							action = function(button)
+						title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Preview=Preview of generated wikitext',
+							action = function(button) -- luacheck: ignore
 								MediaWikiExportServiceProvider.showPreview(propertyTable)
 							end,
 					},
 				},
 				viewFactory:group_box {
-					title = LOC '$$$/LrMediaWiki/Section/Licensing/InformationAndArtwork=Information and Artwork',
+					title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/InformationAndArtwork=Information and Artwork',
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/License=License',
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/License=License',
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -284,7 +296,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/Permission=Permission',
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Permission=Permission',
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -297,7 +309,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/OtherTemplates=Other templates',
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/OtherTemplates=Other templates',
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -310,7 +322,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/Other=Other fields',
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Other=Other fields',
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -323,7 +335,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/Categories=Categories^nseparated by ;',
+							title = labelEditCategories,
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -334,13 +346,32 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 							height_in_lines = 3,
 						},
 					},
-				},
-				viewFactory:group_box {
-					title = LOC '$$$/LrMediaWiki/Section/Licensing/Information=Information',
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/Source=Source',
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/ExtendedCategoriesLabel=Extended',
+							alignment = labelAlignment,
+							width = LrView.share 'label_width',
+						},
+						viewFactory:push_button {
+							title = titleEditCategories,
+							action = function(button) -- luacheck: ignore
+								LrTasks.startAsyncTask( function ()
+									LrFunctionContext.callWithContext ('LrMediaWiki', function(context) -- luacheck: ignore
+										MediaWikiExportServiceProvider.checkApiPath(propertyTable.api_path)
+										propertyTable.info_categories = MediaWikiExportServiceProvider.promptCategories(titleEditCategories, labelEditCategories, propertyTable)
+									end)
+								end)
+							end,
+						},
+					},
+				},
+				viewFactory:group_box {
+					title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Information=Information',
+					viewFactory:row {
+						spacing = viewFactory:label_spacing(),
+						viewFactory:static_text {
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Source=Source',
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -353,7 +384,7 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 					viewFactory:row {
 						spacing = viewFactory:label_spacing(),
 						viewFactory:static_text {
-							title = LOC '$$$/LrMediaWiki/Section/Licensing/Author=Author',
+							title = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Author=Author',
 							alignment = labelAlignment,
 							width = LrView.share 'label_width',
 						},
@@ -369,11 +400,67 @@ MediaWikiExportServiceProvider.sectionsForTopOfDialog = function(viewFactory, pr
 	}
 end
 
+MediaWikiExportServiceProvider.promptCategories = function(title, label, propertyTable)
+	local factory = LrView.osFactory()
+	propertyTable.dialogValue = propertyTable.info_categories
+	local contents = factory:row {
+		spacing = factory:label_spacing(),
+		bind_to_object = propertyTable,
+		factory:static_text {
+			title = label,
+		},
+		factory:edit_field {
+			fill_horizontal = 1,
+			height_in_lines = 3,
+			width_in_chars = 60,
+			immediate = true,
+			value = LrView.bind('dialogValue'),
+			validate = function(view, value ) -- luacheck: ignore
+				local msg = 'Validate, value: <' .. value .. '>'
+				MediaWikiUtils.trace(msg)
+				MediaWikiUtils.initCategoryCompletionList()
+				MediaWikiInterface.categoryCompletion(
+					propertyTable.username,
+					propertyTable.password,
+					propertyTable.api_path,
+					value
+				)
+				if LrTasks.canYield() then
+					MediaWikiUtils.trace('LrTasks.canYield(): True')
+					LrTasks.yield()
+				else
+					MediaWikiUtils.trace('LrTasks.canYield(): False')
+				end
+				MediaWikiUtils.trace('LrTasks.sleep(1): Before')
+				LrTasks.sleep(1)
+				MediaWikiUtils.trace('LrTasks.sleep(1): After')
+				MediaWikiUtils.traceCategoryCompletionList('promptCategories (1)')
+				return false, value
+			end,
+			auto_completion = true,
+			completion = function(view, value) -- luacheck: ignore
+				local categories = MediaWikiUtils.readCategoryCompletionList()
+				MediaWikiUtils.traceCategoryCompletionList('promptCategories (2)')
+				return categories
+			end,
+		},
+	}
+	local dialogResult = LrDialogs.presentModalDialog({
+		title = title,
+		contents = contents,
+	})
+	local result = nil
+	if dialogResult == 'ok' then
+		result = propertyTable.dialogValue
+	end
+	return result
+end
+
 MediaWikiExportServiceProvider.showPreview = function(propertyTable)
 	-- This function to provide a preview message box needs to run as a separate task,
 	-- according to this discussion post: <https://forums.adobe.com/message/8493589#8493589>
 	LrTasks.startAsyncTask( function ()
-			LrFunctionContext.callWithContext ('LrMediaWiki', function(context)
+			LrFunctionContext.callWithContext ('LrMediaWiki', function(context) -- luacheck: ignore
 			local activeCatalog = LrApplication.activeCatalog()
 			local listOfTargetPhotos = activeCatalog:getTargetPhotos()
 			local photo = listOfTargetPhotos[1] -- first photo of the selection
@@ -382,9 +469,9 @@ MediaWikiExportServiceProvider.showPreview = function(propertyTable)
 			if result then
 				local ExportFields = MediaWikiExportServiceProvider.fillFieldsByFile(propertyTable, photo)
 				local wikitext = MediaWikiInterface.buildFileDescription(ExportFields, photo)
-				local messageTitle = LOC '$$$/LrMediaWiki/Section/Licensing/Preview=Preview generated wikitext'
+				local messageTitle = LOC '$$$/LrMediaWiki/Export/SectionUploadInformation/Preview=Preview generated wikitext'
 				if #listOfTargetPhotos > 1 then
-					messageTitle = messageTitle .. LOC ('$$$/LrMediaWiki/Section/Licensing/PreviewTitleAddition=, using first file “^1”', fileName)
+					messageTitle = messageTitle .. LOC ('$$$/LrMediaWiki/Export/SectionUploadInformation/PreviewTitleAddition=, using first file “^1”', fileName)
 				end
 				LrDialogs.message(messageTitle, wikitext, 'info')
 			else
@@ -668,7 +755,7 @@ end
 
 MediaWikiExportServiceProvider.hidePrintResolution = true
 
-MediaWikiExportServiceProvider.showSections = {'fileNaming', 'metadata', 'fileSettings', 'imageSettings', 'outputSharpening'}
+MediaWikiExportServiceProvider.showSections = {'fileNaming', 'fileSettings', 'imageSettings', 'outputSharpening', 'metadata'}
 
 MediaWikiExportServiceProvider.allowFileFormats = {'JPEG', 'TIFF'}
 

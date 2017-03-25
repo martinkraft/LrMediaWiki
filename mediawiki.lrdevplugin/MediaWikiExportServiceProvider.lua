@@ -389,7 +389,6 @@ local showPreview = function(propertyTable)
 			end
 
 			setCurrentOfAll(1)
-			local wikitext
 			local result, message = MediaWikiInterface.loadFileDescriptionTemplate(propertyTable.info_template)
 			if not result then
 				LrDialogs.message(LOC "$$$/LrMediaWiki/Export/DescriptionError=Error reading the file description", message, 'error')
@@ -397,79 +396,129 @@ local showPreview = function(propertyTable)
 			end
 
 			local ExportFields = fillFieldsByFile(propertyTable, photo)
-			wikitext = MediaWikiInterface.buildFileDescription(ExportFields, photo)
+			properties.dialogValue = MediaWikiInterface.buildFileDescription(ExportFields, photo)
 			local dialogTitle = LOC "$$$/LrMediaWiki/Section/UploadInformation/Preview=Preview of generated wikitext"
-			local factory = LrView.osFactory()
-			properties.dialogValue = wikitext
 
-			local contents = factory:column {
-				fill_horizontal = 1,
-				fill_vertical = 1,
-				spacing = factory:label_spacing(),
-				factory:row {
-					fill_vertical = 1,
-					bind_to_object = properties,
-					factory:static_text {
-						title = LrView.bind('dialogValue'),
-						height_in_lines = -1, -- to let the text wrap
-						width_in_chars = 60, -- text wrap needs a value too
-						height = 200, -- initial value
-						fill_horizontal = 1,
-						fill_vertical = 1,
-						font = { -- see [1]
-							name = MediaWikiUtils.getPreviewWikitextFontName(),
-							size = MediaWikiUtils.getPreviewWikitextFontSize(),
-						},
-						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipWikitext=Font name and font size of the wikitext are customizable at the plug-in’s configuration.",
-					},
+			local fileNameTooltip = LOC "$$$/LrMediaWiki/Preview/FileNameTooltip=Current file name"
+			local fontNameTooltip = LOC "$$$/LrMediaWiki/Preview/FontNameTooltip=Font name of generated wikitext. Enter a name of an installed font."
+			local fontSizeTooltip = LOC "$$$/LrMediaWiki/Preview/FontSizeTooltip=Font size of generated wikitext. Enter a value between 10 and 100."
+			properties.font_name = MediaWikiUtils.getPreviewWikitextFontName()
+			properties.font_size = MediaWikiUtils.getPreviewWikitextFontSize()
+
+			local f = LrView.osFactory()
+			local previewText = f:static_text {
+				title = bind 'dialogValue',
+				height_in_lines = -1, -- to let the text wrap
+				width_in_chars = 60, -- text wrap needs a value too
+				fill = 1,
+				font = { -- see [1]
+					name = properties.font_name,
+					size = tonumber(properties.font_size),
 				},
-				factory:row {
-					factory:separator {
-						fill_horizontal = 1, -- "1" means full width
-					},
+			}
+
+			local function updateFont()
+				previewText.font = {
+					name = properties.font_name,
+					size = tonumber(properties.font_size),
+				}
+				MediaWikiUtils.setPreviewWikitextFontName(properties.font_name)
+				MediaWikiUtils.setPreviewWikitextFontSize(properties.font_size)
+			end
+			properties:addObserver('font_name', updateFont)
+			properties:addObserver('font_size', updateFont)
+
+			local contents = f:column {
+				fill = 1,
+				spacing = f:label_spacing(),
+				bind_to_object = properties,
+
+				previewText, -- defined above as local
+				f:separator {
+					fill_horizontal = 1,
 				},
-				factory:row {
-					factory:push_button {
+				f:row {
+					f:push_button {
 						-- | + U+25C0 = BLACK LEFT-POINTING TRIANGLE = |◀
 						title = '|◀',
 						action = function() setPhoto('first') end,
 						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipButtonFirst=First file",
 					},
-					factory:push_button {
+					f:push_button {
 						-- U+25C0 = BLACK LEFT-POINTING TRIANGLE = ◀
 						title = '◀',
 						action = function() setPhoto('previous') end,
 						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipButtonPrevious=Previous file",
 					},
-					factory:push_button {
+					f:push_button {
 						-- U+25B6 = BLACK RIGHT-POINTING TRIANGLE = ▶
 						title = '▶',
 						action = function() setPhoto('next') end,
 						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipButtonNext=Next file",
 					},
-					factory:push_button {
+					f:push_button {
 						-- U+25B6 + | = BLACK RIGHT-POINTING TRIANGLE = ▶|
 						title = '▶|',
 						action = function() setPhoto('last') end,
 						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipButtonLast=Last file",
 					},
-					factory:static_text {
-						bind_to_object = properties,
-						title = LrView.bind('currentOfAll'),
+					f:static_text {
+						title = bind 'currentOfAll',
 						width_in_chars = 30,
 						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipCurrentOfAll=Current index in relation to the total number of selected files",
 					},
 				},
-				factory:row {
-					factory:static_text {
+				f:row {
+					f:static_text {
 						title = LOC "$$$/LrMediaWiki/Preview/FileName=File Name" .. ':',
+						tooltip = fileNameTooltip,
 					},
-					factory:static_text {
-						bind_to_object = properties,
-						title = LrView.bind('fileName'),
+					f:static_text {
+						title = bind 'fileName',
 						width_in_chars = 30,
 						fill_horizontal = 1,
-						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipFileName=Current file name",
+						tooltip = fileNameTooltip,
+					},
+				},
+				f:row {
+					f:static_text {
+						title = LOC "$$$/LrMediaWiki/Preview/FontName=Font Name" .. ':',
+						tooltip = fontNameTooltip,
+					},
+					f:combo_box {
+						value = bind 'font_name',
+						width_in_chars = 12,
+						immediate = true,
+						items = { -- see [1]
+							'Courier', -- Mac, monospace
+							'Courier New', -- Win & Mac, monospace
+							'Lucida Console', -- Win, monospace
+							'Monaco', -- Mac, monospace
+							'<system>', -- LR SDK
+							'<system/bold>', -- LR SDK
+						},
+						tooltip = fontNameTooltip,
+					},
+					f:static_text {
+						title = LOC "$$$/LrMediaWiki/Preview/FontSize=Font Size" .. ':',
+						tooltip = fontSizeTooltip,
+					},
+					f:combo_box {
+						value = bind 'font_size',
+						width_in_chars = 2,
+						immediate = true,
+						min = 10,
+						max = 100,
+						precision = 0, -- number of decimal places
+						items = { -- values have to be numbers
+							10,
+							12,
+							14,
+							16,
+							18,
+							20,
+						},
+						tooltip = fontSizeTooltip,
 					},
 				},
 			}

@@ -97,7 +97,7 @@ MediaWikiUtils.retrievePassword = function(apiPath, username)
 	return password
 end
 
--- configuration
+-- Configuration
 
 MediaWikiUtils.getCreateSnapshots = function()
 	return prefs.create_snapshot or false
@@ -136,21 +136,25 @@ MediaWikiUtils.setLogging = function(logging)
 	end
 end
 
+-- Preview
+
 MediaWikiUtils.getPreviewWikitextFontName = function()
 	return prefs.preview_wikitext_font_name or '' -- no default value
 end
 
-MediaWikiUtils.setPreviewWikitextFontName = function(tag)
-	prefs.preview_wikitext_font_name = tag
+MediaWikiUtils.setPreviewWikitextFontName = function(fontName)
+	prefs.preview_wikitext_font_name = fontName
 end
 
 MediaWikiUtils.getPreviewWikitextFontSize = function()
 	return prefs.preview_wikitext_font_size or 12 -- 12 = default value
 end
 
-MediaWikiUtils.setPreviewWikitextFontSize = function(tag)
-	prefs.preview_wikitext_font_size = tonumber(tag)
+MediaWikiUtils.setPreviewWikitextFontSize = function(fontSize)
+	prefs.preview_wikitext_font_size = fontSize
 end
+
+-- Trace
 
 MediaWikiUtils.trace = function(message)
 	myLogger:trace(message)

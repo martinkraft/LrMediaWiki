@@ -3,7 +3,7 @@
 "$$$/LrMediaWiki/Api/NoConnection=No network connection."
 "$$$/LrMediaWiki/Export/DescriptionError=Error reading the file description"
 "$$$/LrMediaWiki/Export/NoApiPath=No API path given!"
-"$$$/LrMediaWiki/Export/NoDescription=No description given for this file!"
+"$$$/LrMediaWiki/Export/NoDescription=No description (or title if infobox template “Artwork”) given for this file!"
 "$$$/LrMediaWiki/Export/NoPassword=No password given!"
 "$$$/LrMediaWiki/Export/NoPermissionLicense=No permission or license given!"
 "$$$/LrMediaWiki/Export/NoUsername=No username given!"

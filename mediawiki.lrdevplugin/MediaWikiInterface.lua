@@ -162,7 +162,7 @@ MediaWikiInterface.uploadFile = function(filePath, description, hasDescription, 
 		end
 	else
 		if not hasDescription then
-			return LOC "$$$/LrMediaWiki/Export/NoDescription=No description given for this file!"
+			return LOC "$$$/LrMediaWiki/Export/NoDescription=No description (or title if infobox template “Artwork”) given for this file!"
 		end
 	end
 	local uploadResult = MediaWikiApi.upload(targetFileName, filePath, description, comment, ignorewarnings)

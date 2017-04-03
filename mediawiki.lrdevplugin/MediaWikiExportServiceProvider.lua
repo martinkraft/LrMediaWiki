@@ -599,6 +599,19 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 			-- error message)
 			local fileName = string.gsub(LrPathUtils.leafName(pathOrMessage), '[ _]+', '_')
 			local hasDescription = MediaWikiUtils.isStringFilled(filledExportFields.description)
+			-- The infobox template "Artwork" should have either a description
+			-- or a title. In other words: If the description is empty and title
+			-- is filled, it should be treated to have a description:
+			if exportFields.info_template == 'Artwork' and not hasDescription and MediaWikiUtils.isStringFilled(filledExportFields.art.title) then
+				hasDescription = true
+			end
+			-- The infobox template "Information (de)" should have a German
+			-- description "description_de", the description fields
+			-- "description_en" and "description_other" are not used:
+			if exportFields.info_template == 'Information (de)' then
+				local descriptionDe = photo:getPropertyForPlugin(Info.LrToolkitIdentifier, 'description_de')
+				hasDescription = MediaWikiUtils.isStringFilled(descriptionDe)
+			end
 			local message = MediaWikiInterface.uploadFile(pathOrMessage, fileDescription, hasDescription, fileName)
 			if message then
 				rendition:uploadFailed(message)

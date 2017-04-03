@@ -3,7 +3,7 @@
 "$$$/LrMediaWiki/Api/NoConnection=Kann keine Netzwerkverbindung aufbauen."
 "$$$/LrMediaWiki/Export/DescriptionError=Fehler beim Lesen der Dateibeschreibung"
 "$$$/LrMediaWiki/Export/NoApiPath=Kein API-Pfad angegeben!"
-"$$$/LrMediaWiki/Export/NoDescription=Für diese Datei ist keine Beschreibung angegeben!"
+"$$$/LrMediaWiki/Export/NoDescription=Für diese Datei ist keine Beschreibung (oder Titel, falls Infobox-Vorlage „Artwork“) angegeben!"
 "$$$/LrMediaWiki/Export/NoPermissionLicense=Keine Genehmigung oder Lizenz angegeben!"
 "$$$/LrMediaWiki/Export/NoPassword=Kein Passwort angegeben!"
 "$$$/LrMediaWiki/Export/NoUsername=Kein Benutzername angegeben!"

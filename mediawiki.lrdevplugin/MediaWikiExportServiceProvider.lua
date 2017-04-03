@@ -507,8 +507,8 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 	-- configure progress display
 	local exportSession = exportContext.exportSession
 	local photoCount = exportSession:countRenditions()
-	local MessageSingle = LOC("$$$/LrMediaWiki/Export/Progress=Exporting ^1 photos to a MediaWiki", photoCount)
-	local MessageMultiple = LOC "$$$/LrMediaWiki/Export/Progress/One=Exporting one photo to a MediaWiki"
+	local MessageSingle = LOC("$$$/LrMediaWiki/Export/Progress=Exporting ^1 files to a MediaWiki", photoCount)
+	local MessageMultiple = LOC "$$$/LrMediaWiki/Export/Progress/One=Exporting one file to a MediaWiki"
 	exportContext:configureProgress{
 		title = photoCount > 1 and MessageSingle or MessageMultiple
 	}
@@ -850,13 +850,11 @@ end
 
 MediaWikiExportServiceProvider.hidePrintResolution = true
 
-MediaWikiExportServiceProvider.showSections = {'fileNaming', 'metadata', 'fileSettings', 'imageSettings', 'outputSharpening'}
-
-MediaWikiExportServiceProvider.allowFileFormats = {'JPEG', 'TIFF'}
+MediaWikiExportServiceProvider.showSections = {'fileNaming', 'video', 'fileSettings', 'imageSettings', 'outputSharpening', 'metadata'}
 
 MediaWikiExportServiceProvider.allowColorSpaces = {'sRGB'}
 
-MediaWikiExportServiceProvider.canExportVideo = false
+MediaWikiExportServiceProvider.canExportVideo = true
 
 MediaWikiExportServiceProvider.exportPresetFields = {
 	{ key = 'username', default = '' },

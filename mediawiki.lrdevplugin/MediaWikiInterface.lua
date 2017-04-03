@@ -49,13 +49,13 @@ MediaWikiInterface.loadFileDescriptionTemplate = function(templateName)
 	if file then
 		MediaWikiInterface.fileDescriptionPattern = file:read('*all')
 		if not MediaWikiInterface.fileDescriptionPattern then
-			errorMessage = LOC("$$$/LrMediaWiki/Interface/ReadingDescriptionFailed=Could not read the description template file.")
+			errorMessage = LOC("$$$/LrMediaWiki/Interface/ReadingDescriptionFailed=Could not read the file description template file.")
 		else
 			result = true
 		end
 		file:close()
 	else
-		errorMessage = LOC("$$$/LrMediaWiki/Interface/LoadingDescriptionFailed=Could not load the description template file: ^1", message)
+		errorMessage = LOC("$$$/LrMediaWiki/Interface/LoadingDescriptionFailed=Could not load the file description template file: ^1", message)
 	end
 	return result, errorMessage
 end

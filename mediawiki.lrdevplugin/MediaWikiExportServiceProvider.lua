@@ -544,10 +544,10 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 	-- configure progress display
 	local exportSession = exportContext.exportSession
 	local photoCount = exportSession:countRenditions()
-	local MessageSingle = LOC("$$$/LrMediaWiki/Export/Progress=Exporting ^1 photos to a MediaWiki", photoCount)
-	local MessageMultiple = LOC "$$$/LrMediaWiki/Export/Progress/One=Exporting one photo to a MediaWiki"
+	local MessageMultiple = LOC("$$$/LrMediaWiki/Export/Progress=Exporting ^1 photos to a MediaWiki", photoCount)
+	local MessageSingle = LOC "$$$/LrMediaWiki/Export/Progress/One=Exporting one photo to a MediaWiki"
 	exportContext:configureProgress{
-		title = photoCount > 1 and MessageSingle or MessageMultiple
+		title = photoCount > 1 and MessageMultiple or MessageSingle
 	}
 
 	local exportSettings = assert(exportContext.propertyTable)

@@ -39,7 +39,7 @@ Beside [Lightroom SDK][lrsdk], LrMediaWiki uses these APIs:
 * [GitHub API][githubapi]
 
 [comlrmw]: https://commons.wikimedia.org/wiki/Commons:LrMediaWiki
-[lrsdk]: http://www.adobe.com/devnet/photoshoplightroom.html
+[lrsdk]: https://www.adobe.io/apis/creativecloud/lightroomclassic.htm
 [jsonlua]: http://regex.info/blog/lua/json
 [ccby3]: http://creativecommons.org/licenses/by/3.0/deed.en_US
 [mediawikiapi]: https://www.mediawiki.org/wiki/API:Main_page

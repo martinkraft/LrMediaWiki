@@ -33,7 +33,8 @@ priority. Both tools are used to identify syntax errors of the lua files.
 
 "luac" is part of the Adobe Lightroom SDK
 
-"luacheck" can be installed by "homebrew install luacheck".
+"luacheck" can be installed by "homebrew install luacheck" (macOS) or can be
+obtained from https://github.com/mpeterv/luacheck (Windows).
 
 # Build a release
 

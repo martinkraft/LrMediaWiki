@@ -1,42 +1,36 @@
-# Development environment
+## Development environment
 
-* Install Adobe Lightroom Classic SDK, for download start at https://www.adobe.io/apis/creativecloud/lightroomclassic.htm
+Get Adobe Lightroom Classic SDK, for download start at https://www.adobe.io/apis/creativecloud/lightroomclassic.htm. Current SDK version is "Lightroom Classic CC 2019 SDK" of October 2021. Be sure the download includes:
+- Lightroom Classic SDK Programmers Guide (PDF, 207 pages)
+- API reference (a set of HTML pages)
+- Sample Plugins
+- Lua Compiler (Windows and macOS)
 
-* Install a programming editor. "Atom" (https://atom.io) might be a good choice.
-  Install Lua syntax highlighting. It helps a lot!
+Install a programming editor. "Atom" (https://atom.io) might be a good choice. Install Lua syntax highlighting. It helps a lot!
 
-* If not done yet, get a GitHub account.
+If not done yet, get a GitHub account.
 
-* Fork the project from the "Hasenläufer" fork.
+Fork the project from the "Hasenläufer" fork.
 
-* Get a local GUI for GitHub. "GitKraken" (https://www.gitkraken.com) might be a good choice.
+Get a local GUI for GitHub. "GitKraken" (https://www.gitkraken.com) might be a good choice.
 
-# Release build prerequsites
+## Release build prerequsites
 
-* For usage of the release script release.sh, it is needed to have a valid
-GITHUB_TOKEN. Go to your GitHub account, generate a token and set the
-environment variable to this token, like "export GITHUB_TOKEN=abcdef"
-in .profile or .zprofile.
+### GitHub token
 
-* Obtaining your GitHub personal access token
+For usage of the release script release.sh, it is needed to have a valid GITHUB_TOKEN. Go to your GitHub account, generate a token and set the environment variable to this token, like "export GITHUB_TOKEN=abcdef" in .profile or .zprofile.
 
-Sign in to your GitHub account. Change the settings for your GitHub profile by
-clicking your profile image in the upper right, and then click Settings.
-At the bottom of the left menu, in the Developer settings section, click
-the Personal access tokens link.
+Obtaining your GitHub personal access token: Sign in to your GitHub account. Change the settings for your GitHub profile by clicking your profile image in the upper right, and then click Settings. At the bottom of the left menu, in the Developer settings section, click the Personal access tokens link.
 
-## luac and luacheck
+### luac and luacheck
 
-"luac" (the Lua compiler) and "luacheck" (a lua "lint" validator and check program)
-are both used in "my-luacheck.sh". luac is of low priority, luacheck is of high
-priority. Both tools are used to identify syntax errors of the lua files.
+"luac" (the Lua compiler) and "luacheck" (a lua validator and syntax check program) are both used in "my-luacheck.sh". "luac" is of low priority, "luacheck" is of high priority, because it . Both tools are used to identify syntax errors of the lua files.
 
-"luac" is part of the Adobe Lightroom SDK
+"luac" is part of the Adobe Lightroom SDK.
 
-"luacheck" can be installed by "homebrew install luacheck" (macOS) or can be
-obtained from https://github.com/mpeterv/luacheck (Windows).
+"luacheck" can be installed by "luarocks install luacheck" (macOS) or can be obtained from https://github.com/mpeterv/luacheck (Windows).
 
-# Build a release
+## Build a release
 
 Keep the order of the following "cookbook" steps!
 
@@ -54,6 +48,14 @@ Keep the order of the following "cookbook" steps!
 
 * In your local command line run "scripts/release.sh 1.42".
 
-* Go to the Web GUI of GitHub and check the path of the new file "LrMediaWiki-1-42.zip". Take this path and edit the project page https://commons.wikimedia.org/wiki/Commons:LrMediaWiki. Substitute the links of the former zip file by the new path.
+* Go to the Web GUI of GitHub and check the path of the new file "LrMediaWiki-1-42.zip".
+
+* Download the file "LrMediaWiki-1-42.zip" and check the new features and fixes of this download.
+
+* Optional: If possible, use both platforms for tests, Windows and macOS.
+
+* Optional: If possible, use different versions of Lightroom for testing.
+
+* Take the online path of the new version and edit the project page https://commons.wikimedia.org/wiki/Commons:LrMediaWiki. Substitute the links of the former zip file by the new path.
 
 * Publish a release message at the projects talk page https://commons.wikimedia.org/wiki/Commons_talk:LrMediaWiki

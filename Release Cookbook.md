@@ -12,7 +12,7 @@ If not done yet, get a GitHub account.
 
 Fork the project from the "Hasenläufer" fork.
 
-Get a local GUI for GitHub. "GitKraken" (https://www.gitkraken.com) might be a good choice.
+Get a local GUI for Git. "GitKraken" (https://www.gitkraken.com) might be a good choice.
 
 ## Release build prerequsites
 
@@ -24,7 +24,7 @@ Obtaining your GitHub personal access token: Sign in to your GitHub account. Cha
 
 ### luac and luacheck
 
-"luac" (the Lua compiler) and "luacheck" (a lua validator and syntax check program) are both used in "my-luacheck.sh". "luac" is of low priority, "luacheck" is of high priority, because it . Both tools are used to identify syntax errors of the lua files.
+"luac" (the Lua compiler) and "luacheck" (a lua validator and syntax check program) are both used in "my-luacheck.sh". "luac" is of low priority, "luacheck" is of high priority. Both tools are used to identify syntax errors of the lua files, "luacheck" more than "luac". 
 
 "luac" is part of the Adobe Lightroom SDK.
 

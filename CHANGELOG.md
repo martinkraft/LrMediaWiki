@@ -1,5 +1,8 @@
 # LrMediaWiki changelog
 
+## v1.6: Bug fix of login error (2022-01-14)
+- #45: Unable to export: The "token" parameter must be set (bug)
+
 ## v1.5.2: Fix of version control error (2022-01-08)
 
 ## v1.5.1: Fix of version info 1.4 -> 1.5.1 (2022-01-08)

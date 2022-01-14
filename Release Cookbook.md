@@ -40,7 +40,7 @@ Keep the order of the following "cookbook" steps!
 
 * Edit "CHANGELOG.md" and add a description of the changes.
 
-* Commit the changes with an appropriate commit comment.
+* Commit the changes with an appropriate commit comment. Ideally cite the issue title and number of the corresponding GitHub issue.
 
 * Push all
 

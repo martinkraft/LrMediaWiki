@@ -1,4 +1,4 @@
-Copyright (c) 2014, 2015, 2016 by the LrMediaWiki team (see CREDITS.txt file in
+Copyright (c) 2014–2022 by the LrMediaWiki team (see CREDITS.txt file in
 the project root directory or [0]), X11 License
 
 Except:

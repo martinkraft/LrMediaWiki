@@ -36,6 +36,17 @@ return {
 
 	LrPluginInfoUrl = 'https://commons.wikimedia.org/wiki/Commons:LrMediaWiki',
 
+	LrExportMenuItems = {
+		{
+			title = "Search and Replace Filename",
+			file = "ToolSearchAndReplaceFilename.lua",
+		},
+		{
+			title = "Generate filename and description from persons",
+			file = "ToolGenerateFromPersons.lua",
+		},
+	},
+
 	VERSION = {
 		major = 1,
 		minor = 6,

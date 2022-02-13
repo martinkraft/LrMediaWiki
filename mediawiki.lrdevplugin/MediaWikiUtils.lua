@@ -116,6 +116,14 @@ MediaWikiUtils.setExportKeyword = function(tag)
 	prefs.export_keyword = tag
 end
 
+MediaWikiUtils.getExportColor = function()
+	return prefs.export_color or nil
+end
+
+MediaWikiUtils.setExportColor = function(color)
+	prefs.export_color = color
+end
+
 MediaWikiUtils.getCheckVersion = function()
 	return prefs.check_version or false
 end

@@ -24,6 +24,7 @@ local MediaWikiPluginInfoProvider = {}
 MediaWikiPluginInfoProvider.startDialog = function(propertyTable)
   propertyTable.create_snapshots = MediaWikiUtils.getCreateSnapshots()
   propertyTable.export_keyword = MediaWikiUtils.getExportKeyword()
+  propertyTable.export_color = MediaWikiUtils.getExportColor()
   propertyTable.check_version = MediaWikiUtils.getCheckVersion()
   -- propertyTable.location_template = MediaWikiUtils.getLocationTemplate()
   propertyTable.structured_data = MediaWikiUtils.getStructuredData()
@@ -35,6 +36,7 @@ end
 MediaWikiPluginInfoProvider.endDialog = function(propertyTable)
   MediaWikiUtils.setCreateSnapshots(propertyTable.create_snapshots)
   MediaWikiUtils.setExportKeyword(propertyTable.export_keyword)
+  MediaWikiUtils.setExportColor(propertyTable.export_color)
   MediaWikiUtils.setCheckVersion(propertyTable.check_version)
   -- MediaWikiUtils.setLocationTemplate(propertyTable.location_template)
   MediaWikiUtils.setStructuredData(propertyTable.structured_data)
@@ -120,6 +122,28 @@ MediaWikiPluginInfoProvider.sectionsForTopOfDialog = function(viewFactory, prope
 					width = 222,
 					-- fill_horizontal = 1,
 					tooltip = exportKeywordTooltip,
+				},
+			},
+
+			viewFactory:row {
+				spacing = viewFactory:control_spacing(),
+				viewFactory:static_text {
+					width = LrView.share 'label_width',
+					title = LOC "$$$/LrMediaWiki/Section/Config/ExportColorLabel=Color label on export" .. ':',
+					alignment = labelAlignment,
+				},
+				viewFactory:combo_box {
+					value = bind 'export_color',
+					width = 222,
+					immediate = true,
+					items = { 
+						nil, 
+						'red',
+						'yellow',  
+						'green', 
+						'blue',
+						'purple',
+					},
 				},
 			},
 

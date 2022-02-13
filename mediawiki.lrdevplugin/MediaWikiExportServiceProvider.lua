@@ -678,6 +678,14 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 					end)
 				end
 
+				-- mark image with color label
+				local color = MediaWikiUtils.getExportColor()
+				if color ~= nil then
+					catalog:withWriteAccessDo('SetColorLabel', function(context) -- luacheck: ignore context
+						photo:setRawMetadata('colorNameForLabel', color);
+					end)
+				end
+
 				-- add configured export keyword
 				local keyword = MediaWikiUtils.getExportKeyword()
 				if MediaWikiUtils.isStringFilled(keyword) then

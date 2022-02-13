@@ -1,5 +1,8 @@
 # LrMediaWiki changelog
 
+## v1.7: Set color label on export (2021-02-14)
+- #46: Set color label on export (enhancement)
+
 ## v1.6: Bug fix of login error (2022-01-14)
 - #45: Unable to export: The "token" parameter must be set (bug)
 

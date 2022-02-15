@@ -175,6 +175,7 @@
 "$$$/LrMediaWiki/Section/Config/ExportColorBlue=Blau"
 "$$$/LrMediaWiki/Section/Config/ExportColorPurple=Lila"
 "$$$/LrMediaWiki/Section/Config/ExportColorNone=Ohne"
+"$$$/LrMediaWiki/Section/Config/ExportColorUnchanged=Unverändert"
 "$$$/LrMediaWiki/Section/Config/Logging/Description=Wenn die Protokollierung aktiviert ist, werden alle API-Abfragen in „Dokumente/LrMediaWikiLogger.log“ aufgezeichnet."
 "$$$/LrMediaWiki/Section/Config/Logging/Password=Die Protokoll-Datei enthält auch Ihr Passwort im Klartext!"
 "$$$/LrMediaWiki/Section/Config/Logging/Warning=Achtung"

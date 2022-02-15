@@ -143,6 +143,7 @@ MediaWikiPluginInfoProvider.sectionsForTopOfDialog = function(viewFactory, prope
             { title = LOC "$$$/LrMediaWiki/Section/Config/ExportColorBlue=Blue", value = 'blue' },
             { title = LOC "$$$/LrMediaWiki/Section/Config/ExportColorPurple=Purple", value = 'purple' },
             { title = LOC "$$$/LrMediaWiki/Section/Config/ExportColorNone=None", value = 'none' },
+            { title = LOC "$$$/LrMediaWiki/Section/Config/ExportColorUnchanged=Unchanged", value = nil },
 					},
 				},
 			},

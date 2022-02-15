@@ -117,7 +117,7 @@ MediaWikiUtils.setExportKeyword = function(tag)
 end
 
 MediaWikiUtils.getExportColor = function()
-	return prefs.export_color or 'none' -- default
+	return prefs.export_color or nil -- default
 end
 
 MediaWikiUtils.setExportColor = function(color)

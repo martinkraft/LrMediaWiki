@@ -1,5 +1,8 @@
 # LrMediaWiki changelog
 
+## v1.7.1: Additional color code "Unchanged" on export needed (2022-02-15)
+- #49: Additional color code "Unchanged" on export needed (bug)
+
 ## v1.7: Set color label on export (2021-02-14)
 - #46: Set color label on export (enhancement)
 

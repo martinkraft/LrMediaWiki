@@ -24,7 +24,7 @@ Obtaining your GitHub personal access token: Sign in to your GitHub account. Cha
 
 ### luac and luacheck
 
-"luac" (the Lua compiler) and "luacheck" (a lua validator and syntax check program) are both used in "my-luacheck.sh". "luac" is of low priority, "luacheck" is of high priority. Both tools are used to identify syntax errors of the lua files, "luacheck" more than "luac". 
+"luac" (the Lua compiler) and "luacheck" (a lua validator and syntax check program) are both used in "my-luacheck.sh". "luac" is of low priority, "luacheck" is of high priority. Both tools are used to identify syntax errors of the lua files, "luacheck" more than "luac".
 
 "luac" is part of the Adobe Lightroom SDK.
 
@@ -48,9 +48,9 @@ Keep the order of the following "cookbook" steps!
 
 * In your local command line run "scripts/release.sh 1.42".
 
-* Go to the Web GUI of GitHub and check the path of the new file "LrMediaWiki-1-42.zip".
+* Go to the Web GUI of GitHub and check the path of the new file "LrMediaWiki-1.42.zip".
 
-* Download the file "LrMediaWiki-1-42.zip" and check the new features and fixes of this download.
+* Download the file "LrMediaWiki-1.42.zip" and check the new features and fixes of this download.
 
 * Optional: If possible, use both platforms for tests, Windows and macOS.
 

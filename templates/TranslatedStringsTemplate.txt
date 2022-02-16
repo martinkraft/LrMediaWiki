@@ -170,6 +170,7 @@
 "$$$/LrMediaWiki/Section/Config/ExportColorNone=None"
 "$$$/LrMediaWiki/Section/Config/ExportColorPurple=Purple"
 "$$$/LrMediaWiki/Section/Config/ExportColorRed=Red"
+"$$$/LrMediaWiki/Section/Config/ExportColorUnchanged=Unchanged"
 "$$$/LrMediaWiki/Section/Config/ExportColorYellow=Yellow"
 "$$$/LrMediaWiki/Section/Config/ExportKeyword=Export Keyword"
 "$$$/LrMediaWiki/Section/Config/ExportKeywordTooltip=If set, this keyword is added after successful export."

@@ -6,7 +6,7 @@ Except:
 
 [0] <https://raw.githubusercontent.com/ireas/LrMediaWiki/master/CREDITS.txt>
 [1] <http://regex.info/blog/lua/json>
-[2] <http://creativecommons.org/licenses/by/3.0/deed.en_US>
+[2] <https://creativecommons.org/licenses/by/3.0/deed.en_US>
 
 The X11 License
 

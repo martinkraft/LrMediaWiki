@@ -507,7 +507,7 @@ MediaWikiInterface.buildFileDescription = function(exportFields, photo)
 		success = true
 	end
 
-	return wikitext, success
+	return wikitext, success, arguments
 end
 
 MediaWikiInterface.wbSetLabel = function(exportFields, fileName)

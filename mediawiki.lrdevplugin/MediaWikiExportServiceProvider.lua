@@ -640,8 +640,8 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 			}
 
 			local filledExportFields = fillFieldsByFile(exportFields, photo, useLocationInfo)
-			local fileDescription
-			fileDescription, success = MediaWikiInterface.buildFileDescription(filledExportFields, photo)
+			local fileDescription, arguments
+			fileDescription, success, arguments = MediaWikiInterface.buildFileDescription(filledExportFields, photo)
 
 			if success == false then
 				local mesg = LOC("$$$/LrMediaWiki/Export/CancelMessage=The export failed due to empty variable or faulty placeholder name.")
@@ -661,6 +661,7 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 				-- publish caption_en
 				if MediaWikiUtils.getStructuredData() then -- Only if structured data is supported by the server
 					if MediaWikiUtils.isStringFilled(filledExportFields.caption_en) then
+						filledExportFields.caption_en = MediaWikiUtils.substitutePlaceholders(filledExportFields.caption_en, arguments)
 						message = MediaWikiInterface.wbSetLabel(filledExportFields, fileName)
 						if message then
 							rendition:uploadFailed(message)

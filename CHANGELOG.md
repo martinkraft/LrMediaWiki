@@ -1,5 +1,10 @@
 # LrMediaWiki changelog
 
+## v1.7.2: Bug fix release (2022-03-08)
+
+### Fixed issues
+- #51: The placeholder substitution doesn't work at structured data field "Caption (en)" (bug)
+
 ## v1.7.1: Additional color code "Unchanged" on export needed (2022-02-15)
 - #49: Additional color code "Unchanged" on export needed (bug)
 

@@ -374,9 +374,30 @@ local preparePreviewText = function(propertyTable, photo)
 		local arguments = {}
 		arguments = MediaWikiUtils.currentDate(arguments) -- get list of date related placeholders
 		local substitutedGallery = MediaWikiUtils.substitutePlaceholders(propertyTable.gallery, arguments)
-		wikitext = wikitext .. "\n___ Gallery: ___\n" .. substitutedGallery
+		wikitext = wikitext .. "\nGallery: " .. substitutedGallery
 	end
 	return wikitext
+end
+
+local copyToClipboard = function(clipboardText, fileName)
+  local fileNameLabel = LOC "$$$/LrMediaWiki/Preview/FileName=File Name" .. ": " -- used twice
+	clipboardText = clipboardText .. "\n" .. fileNameLabel .. fileName
+	local copyCmd
+	if WIN_ENV == true then
+		-- Windows "echo" command doesn't work with the pipes and newlines of the cliboardText.
+		-- Workaround: A temporary file is used to allow "clip < file".
+		LrTasks.startAsyncTask( function ()
+			local tmpFile = os.tmpname()
+			local fd = assert(io.open(tmpFile, "w+"))
+			fd:write(clipboardText)
+			copyCmd = "chcp 65001 & clip < " .. tmpFile -- chcp 65001 == change code page to UTF-8
+			io.close(fd)
+			LrTasks.execute(copyCmd)
+		end)
+	elseif MAC_ENV == true then
+		copyCmd = "export LANG=en_US.UTF-8; echo \"" .. clipboardText .. "\" | pbcopy"
+		LrTasks.execute(copyCmd)
+	end
 end
 
 local showPreview = function(propertyTable)
@@ -422,8 +443,7 @@ local showPreview = function(propertyTable)
 
 					photo = properties.photoList[properties.index]
 					properties.fileName = photo:getFormattedMetadata('fileName')
-					local wikitext = preparePreviewText(propertyTable, photo)
-					properties.dialogValue = wikitext
+					properties.dialogValue = preparePreviewText(propertyTable, photo)
 				end)
 			end
 
@@ -439,6 +459,29 @@ local showPreview = function(propertyTable)
 			local factory = LrView.osFactory()
 			properties.dialogValue = wikitext
 
+			local theWikiText = factory:static_text {
+				title = LrView.bind('dialogValue'),
+				height_in_lines = -1, -- to let the text wrap
+				width_in_chars = 60, -- text wrap needs a value too
+				height = 200, -- initial value
+				fill_horizontal = 1,
+				fill_vertical = 1,
+				font = { -- see [1]
+					name = MediaWikiUtils.getPreviewWikitextFontName(),
+					size = MediaWikiUtils.getPreviewWikitextFontSize(),
+				},
+				immediate = true, -- NEW
+				tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipWikitext=Font name and font size of the wikitext are customizable at the plug-in’s configuration.",
+			}
+
+			local fileName = factory:static_text {
+				bind_to_object = properties,
+				title = LrView.bind('fileName'),
+				width_in_chars = 30,
+				fill_horizontal = 1,
+				tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipFileName=Current file name",
+			}
+
 			local contents = factory:column {
 				fill_horizontal = 1,
 				fill_vertical = 1,
@@ -446,19 +489,7 @@ local showPreview = function(propertyTable)
 				factory:row {
 					fill_vertical = 1,
 					bind_to_object = properties,
-					factory:static_text {
-						title = LrView.bind('dialogValue'),
-						height_in_lines = -1, -- to let the text wrap
-						width_in_chars = 60, -- text wrap needs a value too
-						height = 200, -- initial value
-						fill_horizontal = 1,
-						fill_vertical = 1,
-						font = { -- see [1]
-							name = MediaWikiUtils.getPreviewWikitextFontName(),
-							size = MediaWikiUtils.getPreviewWikitextFontSize(),
-						},
-						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipWikitext=Font name and font size of the wikitext are customizable at the plug-in’s configuration.",
-					},
+					theWikiText,
 				},
 				factory:row {
 					factory:separator {
@@ -490,6 +521,11 @@ local showPreview = function(propertyTable)
 						action = function() setPhoto('last') end,
 						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipButtonLast=Last file",
 					},
+					factory:push_button {
+						title = LOC "$$$/LrMediaWiki/Preview/ButtonCopyToClipboard=Copy to clipboard",
+						action = function() copyToClipboard(theWikiText.title, fileName.title) end,
+						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipButtonCopyToClipboard=Copies text to clipboard",
+					},
 					factory:static_text {
 						bind_to_object = properties,
 						title = LrView.bind('currentOfAll'),
@@ -499,15 +535,9 @@ local showPreview = function(propertyTable)
 				},
 				factory:row {
 					factory:static_text {
-						title = LOC "$$$/LrMediaWiki/Preview/FileName=File Name" .. ':',
+						title = LOC "$$$/LrMediaWiki/Preview/FileName=File Name" .. ':', -- used twice
 					},
-					factory:static_text {
-						bind_to_object = properties,
-						title = LrView.bind('fileName'),
-						width_in_chars = 30,
-						fill_horizontal = 1,
-						tooltip = LOC "$$$/LrMediaWiki/Preview/TooltipFileName=Current file name",
-					},
+					fileName,
 				},
 			}
 

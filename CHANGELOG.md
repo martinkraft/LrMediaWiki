@@ -1,5 +1,10 @@
 # LrMediaWiki changelog
 
+## v1.8.0: Add a "Copy to clipboard" button at wikitext preview (2022-04-20)
+
+## Issue
+- #52: Add a "Copy to clipboard" button at wikitext preview (enhancement)
+
 ## v1.7.2: Bug fix release (2022-03-08)
 
 ### Fixed issues

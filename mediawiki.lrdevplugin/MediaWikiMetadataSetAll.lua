@@ -31,6 +31,12 @@ return {
 	id = 'LrMediaWikiMetadataSetAll', -- needs to be unique!
 	title = LOC "$$$/LrMediaWiki/MetadataSetAll=LrMediaWiki – All Fields",
 	items = {
+		{ 'com.adobe.label', label = 'Lightroom' },
+		'com.adobe.filename',
+		'com.adobe.copyname',
+		'com.adobe.headline',
+		'com.adobe.title',
+		'com.adobe.separator',
 		{ 'com.adobe.label', label = 'LrMediaWiki' },
 		-- first group
 		{ pf .. 'caption_en', label = LOC "$$$/LrMediaWiki/Metadata/FileCaptionEn=Caption (en)" },

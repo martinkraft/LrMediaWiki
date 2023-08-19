@@ -713,7 +713,7 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 				local color = MediaWikiUtils.getExportColor()
 				if color ~= nil then
 					catalog:withWriteAccessDo('SetColorLabel', function(context) -- luacheck: ignore context
-						photo:setRawMetadata('colorNameForLabel', color);
+						photo:setRawMetadata('colorNameForLabel', color); 
 					end)
 				end
 

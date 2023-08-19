@@ -38,12 +38,20 @@ return {
 
 	LrExportMenuItems = {
 		{
+			title = "Search and Replace Metadata",
+			file = "ToolSearchAndReplaceMetadata.lua",
+		},
+		{
 			title = "Search and Replace Filename",
 			file = "ToolSearchAndReplaceFilename.lua",
 		},
 		{
 			title = "Generate filename and description from persons",
 			file = "ToolGenerateFromPersons.lua",
+		},
+		{
+			title = "Test",
+			file = "ToolTest.lua",
 		},
 	},
 

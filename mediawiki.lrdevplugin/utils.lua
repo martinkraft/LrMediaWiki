@@ -192,6 +192,9 @@ function u.getRegions(photo)
     local xmp = u.checkXmp(photo)
     local regions = {}
 
+    
+    --u.log( photo:getFormattedMetadata('sidecars') )
+
     local nRegionsList = u.findNodeByName(xmp, "RegionList")
 
     if (nRegionsList ~= nil) then 

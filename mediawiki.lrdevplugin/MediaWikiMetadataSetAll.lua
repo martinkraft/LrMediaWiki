@@ -36,6 +36,7 @@ return {
 		'com.adobe.copyname',
 		'com.adobe.headline',
 		'com.adobe.title',
+		'com.adobe.sidecar',
 		'com.adobe.separator',
 		{ 'com.adobe.label', label = 'LrMediaWiki' },
 		-- first group

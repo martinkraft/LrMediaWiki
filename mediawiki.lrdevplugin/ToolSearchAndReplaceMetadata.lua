@@ -14,39 +14,56 @@ local Info = require 'Info'
 local MediaWikiUtils = require 'MediaWikiUtils'
 local json = require 'JSON'
 local u = require 'utils'
+local metadataProvider = require 'MediaWikiMetadataProvider'
 
 -- Functions -------------------------------------------------------------------
 
-local function searchAndReplaceTitle( photo, searchStr, replaceStr )
+local function searchAndReplaceMetadata( photo, metadataName, searchStr, replaceStr )
     local filename = string.sub( tostring(photo:getFormattedMetadata('fileName')),  0, -5)
     --underscore, num, oldlabel = string.match(filename, 'MJK(_*)(%d*)(.*)')
 
-    local title = filename
-    title = title:gsub(searchStr, replaceStr)
+    
+    local str = photo:getPropertyForPlugin( _PLUGIN, 'metadataName')
+    str = str:gsub(searchStr, replaceStr)
 
-    return title
+    photo:getPropertyForPlugin( _PLUGIN, 'metadataName', str)
+
+    return str
 end
 
 local LrView = import "LrView"
 
 LrFunctionContext.callWithContext( 'dialogExample', function( context )
-    local properties = LrBinding.makePropertyTable( context )
-    properties.str = '_'
-    properties.replacStr = ''
+
+    local prefs = import 'LrPrefs'.prefsForPlugin()
+
+    prefs.searchAndReplaceMetadata = prefs.searchAndReplaceMetadata or {
+        str = "..", 
+        replaceStr = "--",
+    }
+
+    local props = u.copyProps(prefs.searchAndReplaceMetadata, LrBinding.makePropertyTable( context ))
+
+    --u.log(metadataProvider.title);
+    --u.log( json:encode_pretty(metadataProvider) )
 
     local f = LrView.osFactory()
     local contents = f:view { 
-        bind_to_object = properties,
+        bind_to_object = props,
         f:row { 
             f:static_text {
                 title = "Search for",
             },
         },
         f:row { 
+            --f:popup_menu {
+            --    items = LrView.bind 'websiteChoices',
+            --    value = LrView.bind 'websiteChosen',
+            --},
             f:edit_field { 
                 fill_horizonal = 1,
                 width_in_chars = 40,
-                height_in_lines = 3,
+                height_in_lines = 2,
                 immediate = true,
                 placeholder_string = 'string to search for',
                 value = LrView.bind( 'str' ),
@@ -63,7 +80,7 @@ LrFunctionContext.callWithContext( 'dialogExample', function( context )
             f:edit_field { 
                 fill_horizonal = 1,
                 width_in_chars = 40, 
-                height_in_lines = 3,
+                height_in_lines = 2,
                 immediate = true,
                 placeholder_string = 'replace string',
                 value = LrView.bind( 'replaceStr' ),
@@ -74,9 +91,9 @@ LrFunctionContext.callWithContext( 'dialogExample', function( context )
     local inputOk = LrDialogs.presentModalDialog(  -- invoke a dialog box
         {
             resizable = true,
-            title = "Adjust file title with Search and Replace", 
+            title = "Adjust MediaWiki Metadata with Search and Replace", 
             contents = contents,   -- with the UI element
-            actionVerb = "Adjust title",   -- label for the action button
+            actionVerb = "Adjust Metadata",   -- label for the action button
         }
     )
 
@@ -88,16 +105,21 @@ LrFunctionContext.callWithContext( 'dialogExample', function( context )
         local data = LrTasks.startAsyncTask(function()
             local data = ''
 
-            for key,photo in pairs(photos) do 
-                -- local persons = getPersons(photo)
-                local title = searchAndReplaceTitle(photo, properties.str, properties.replaceStr)
-                --text = text:gsub(", ", " and ")
+            catalog:withWriteAccessDo('Set MetaData', function()
+            
+                for key,photo in pairs(photos) do 
+                    
+                    local v
+                    for key,md in pairs(metadataProvider.metadataFieldsForPhotos) do
+                        v = photo:getPropertyForPlugin( _PLUGIN, md.id )
+                        if v ~= nil then
+                            v = v:gsub(props.str, props.replaceStr)   
+                            photo:setPropertyForPlugin( _PLUGIN, md.id, v )
+                        end
+                    end
+                end
 
-                catalog:withWriteAccessDo('Set Filename', function()
-                    photo:setRawMetadata( 'title', title )        
-                    --photo:setRawMetadata( 'copyName', title .. '.CR2') 
-                end)
-            end
+            end)
             --utils.log(tostring(data))
 
             return data

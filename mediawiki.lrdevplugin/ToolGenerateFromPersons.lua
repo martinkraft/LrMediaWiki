@@ -28,15 +28,18 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
             title = "empty",
             value = {
                 title = '{{f}} {{p}}',
+                title_sans = '{{f}}',
+                title_de = true,
                 description_de = '{{p}}',
                 description_en = '{{p}}',
                 categories = '{{p}}',
-                title_de = false
             }
         }
     }
 
-    prefs.generator = prefs.generator or prefs.generatorPresets[0]
+    prefs.peopleList = prefs.peopleList or {}
+
+    prefs.generator = prefs.generator or prefs.generatorPresets[0].value
 
     local props = u.copyProps(prefs.generator,
                               LrBinding.makePropertyTable(context))
@@ -45,6 +48,7 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
     local photos = catalog:getTargetPhotos()
 
     local f = LrView.osFactory()
+    local bind = LrView.bind
     local contents = f:view{
         bind_to_object = props,
         f:row{
@@ -65,18 +69,32 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 height_in_lines = 1,
                 immediate = true,
                 placeholder_string = 'filename prefix (incl. no) = {{f}}, fileumber = {{n}} persons = {{p}}',
-                value = LrView.bind('title'),
-                wraps = true
+                value = bind 'title',
+                wraps = false
             },
             f:checkbox{
                 title = 'de, ',
-                value = LrView.bind('title_de'),
-                checked_value = false
+                value = bind 'title_de'
             },
             f:checkbox{
                 title = '',
-                value = LrView.bind('title_change'),
-                checked_value = true
+                value = bind 'title_change'
+            }
+        },
+        f:row{
+            margin_top = 20,
+            f:static_text{width = LrView.share "label_width", title = "Title without names"},
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 40,
+                height_in_lines = 1,
+                immediate = true,
+                value = bind 'title_sans',
+                wraps = false
+            },
+            f:checkbox{
+                title = '',
+                value = bind 'title_sans_change'
             }
         },
         f:row{
@@ -97,7 +115,8 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
             f:checkbox{
                 title = '',
                 value = LrView.bind('description_de_change'),
-                checked_value = true
+                checked_value = true,
+                unchecked_value = false
             }
         },
         f:row{
@@ -117,7 +136,8 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
             f:checkbox{
                 title = '',
                 value = LrView.bind('description_en_change'),
-                checked_value = true
+                checked_value = true,
+                unchecked_value = false
             }
         },
         f:row{
@@ -137,7 +157,8 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
             f:checkbox{
                 title = '',
                 value = LrView.bind('categories_change'),
-                checked_value = true
+                checked_value = true,
+                unchecked_value = false
             }
         },
         f:separator{fill_horizontal = 1},
@@ -152,7 +173,7 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
             f:push_button{
                 title = 'load',
                 action = function(args)
-                    u.copyProps(props.preset, props, {stringsOnly = true})
+                    u.copyProps(props.preset, props, {stringsOnly = false})
                     -- u.log( json:encode(props.preset))
                 end
             },
@@ -254,6 +275,26 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                         -- u.log(json:encode(prefs.generatorPresets))
                     end
                 end
+            },
+            f:push_button{
+                title = 'import People List',
+                action = function(args)
+
+                    local file = LrDialogs.runOpenPanel({
+                        title = 'Import People List as JSON file from..',
+                        prompt = 'Open People List',
+                        canChooseFiles = true,
+                        allowsMultipleSelection = false,
+                        fileTypes = 'json'
+                    })
+
+                    local str = LrFileUtils.readFile(file[1])
+                    local data = json:decode(str)
+
+                    if data then
+                        prefs.peopleList = data
+                    end
+                end
             }
         },
         f:separator{fill_horizontal = 1}
@@ -285,9 +326,17 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 -- filter "_" names
 
                 for i = #regions, 1, -1 do
-                    local firstChar = string.sub(regions[i].name or '_', 1, 1)
+                    local namePreset
+                    local region = regions[i]
+                    local firstChar = string.sub(region.name or '_', 1, 1)
                     if not firstChar:match("[%w]") then
                         table.remove(regions, i)
+                    else
+                        namePreset = prefs.peopleList[region.name]
+                        if namePreset then
+                            region.name = namePreset.nickname or region.name
+                            
+                        end
                     end
                 end
 
@@ -305,17 +354,23 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                     -- catalog:withPrivateWriteAccessDo('Set Filename', function()
 
                     local des
+                    local titleNames = u.getNames(regions, {
+                        last = (props.title_de and " und ") or " and ",
+                        inter = ", "
+                    });
 
-                    if props.title then
+                    if titleNames ~= '' and (#regions < 6) and props.title then                        
+
                         photo:setRawMetadata('title',
-                                             string.gsub(
-                                                 string.gsub(props.title,
-                                                             '{{f}}',
-                                                             fname.preName),
-                                                 '{{p}}', u.getNames(regions, {
-                                last = (props.title_de and " und ") or " and ",
-                                inter = ", "
-                            })))
+                            string.gsub(
+                                string.gsub(props.title,
+                                            '{{f}}',
+                                            fname.preName),
+                                '{{p}}', titleNames
+                            )
+                        )
+                    elseif props.title_sans then
+                        photo:setRawMetadata('title', string.gsub(props.title_sans, '{{f}}', fname.preName))
                     end
 
                     if props.description_de then

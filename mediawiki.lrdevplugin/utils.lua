@@ -448,7 +448,36 @@ function u.copyProps( fromOb, toOb, options )
     return toOb
 end
 
+-- mimic Handlebars-style templating
+function u.renderMustache(template, data)
+    return template:gsub("{{(.-)}}", data)
+end
 
+-- strip the text from WikiText-Links
+function u.stripWikiLinks(input)
+
+    local function innerReplaceFunc(v1, v2, v3, v4)        
+        --u.log(v1..' | '..(v2 or '')..' | '..(v3 or '')..' | '..(v4 or ''))
+        return v2:match'^%s*(.*%S)' or '' --trim parts
+    end
+
+    local function replaceFunc(v1, v2)
+        --u.log(v1..' | '..(v2 or ''))
+        if v2 ~= "" then 
+            --u.log('return 2 '..v2)
+            return v2 
+        else        
+            --u.log('return 1 '..v1)
+            local innerOutput = v1:gsub("(:%a%a?:?)([^%(]*)%s*%(?(.-)%)?$", innerReplaceFunc)
+            return innerOutput
+        end        
+    end
+
+    -- Perform the replacement
+    local output = input:gsub("%[%[([^%|%]]+)%|?([^%|%]]*)%]%]", replaceFunc)
+    --u.log('output: '..output)
+    return output
+end
 
 -- RETURN ------------------------
 

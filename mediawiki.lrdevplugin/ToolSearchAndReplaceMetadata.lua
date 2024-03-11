@@ -22,6 +22,7 @@ local function searchAndReplaceMetadata( photo, metadataName, searchStr, replace
     local filename = string.sub( tostring(photo:getFormattedMetadata('fileName')),  0, -5)
     --underscore, num, oldlabel = string.match(filename, 'MJK(_*)(%d*)(.*)')
 
+    replaceStr = replaceStr or ""
     
     local str = photo:getPropertyForPlugin( _PLUGIN, 'metadataName')
     str = str:gsub(searchStr, replaceStr)

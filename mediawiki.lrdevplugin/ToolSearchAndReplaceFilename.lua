@@ -21,6 +21,8 @@ local function searchAndReplaceTitle( photo, searchStr, replaceStr )
     local filename = string.sub( tostring(photo:getFormattedMetadata('fileName')),  0, -5)
     --underscore, num, oldlabel = string.match(filename, 'MJK(_*)(%d*)(.*)')
 
+    replaceStr = replaceStr or ""
+
     local title = filename
     title = title:gsub(searchStr, replaceStr)
 

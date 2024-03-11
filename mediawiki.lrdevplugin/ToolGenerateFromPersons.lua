@@ -23,7 +23,7 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
     local prefs = import'LrPrefs'.prefsForPlugin()
 
     prefs.generatorPresets = prefs.generatorPresets or {
-        -- prefs.generatorPresets = {
+    --prefs.generatorPresets = {
         {
             title = "empty",
             value = {
@@ -33,13 +33,15 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 description_de = '{{p}}',
                 description_en = '{{p}}',
                 categories = '{{p}}',
+                v1 = '', v2 = '', v3 = ''
             }
         }
     }
 
     prefs.peopleList = prefs.peopleList or {}
 
-    prefs.generator = prefs.generator or prefs.generatorPresets[0].value
+    prefs.generator = prefs.generator or prefs.generatorPresets[1].value
+    --prefs.generator = prefs.generatorPresets[1].value
 
     local props = u.copyProps(prefs.generator,
                               LrBinding.makePropertyTable(context))
@@ -68,7 +70,7 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 width_in_chars = 36,
                 height_in_lines = 1,
                 immediate = true,
-                placeholder_string = 'filename prefix (incl. no) = {{f}}, fileumber = {{n}} persons = {{p}}',
+                placeholder_string = 'filename prefix (incl. no) = {{f}}, fileumber = {{n}}, persons = {{p}}',
                 value = bind 'title',
                 wraps = false
             },
@@ -90,11 +92,34 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 height_in_lines = 1,
                 immediate = true,
                 value = bind 'title_sans',
-                wraps = false
+                wraps = false,
+                tooltip = "The title that ist used if there aren't any names found"
             },
             f:checkbox{
                 title = '',
                 value = bind 'title_sans_change'
+            }
+        },
+        f:row{
+            margin_top = 10,
+            f:static_text{
+                width = LrView.share "label_width",
+                title = "Description (en)"
+            },
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 40,
+                height_in_lines = 5,
+                immediate = true,
+                placeholder_string = 'type {{p}} to insert person names',
+                value = LrView.bind('description_en'),
+                tooltip = "The english description is also used as caption with striped WikiLinks"
+            },
+            f:checkbox{
+                title = '',
+                value = LrView.bind('description_en_change'),
+                checked_value = true,
+                unchecked_value = false
             }
         },
         f:row{
@@ -121,27 +146,6 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
         },
         f:row{
             margin_top = 10,
-            f:static_text{
-                width = LrView.share "label_width",
-                title = "Description (en)"
-            },
-            f:edit_field{
-                fill_horizonal = 1,
-                width_in_chars = 40,
-                height_in_lines = 5,
-                immediate = true,
-                placeholder_string = 'type {{p}} to insert person names',
-                value = LrView.bind('description_en')
-            },
-            f:checkbox{
-                title = '',
-                value = LrView.bind('description_en_change'),
-                checked_value = true,
-                unchecked_value = false
-            }
-        },
-        f:row{
-            margin_top = 10,
             margin_bottom = 20,
             f:static_text{
                 width = LrView.share "label_width",
@@ -152,13 +156,58 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 width_in_chars = 40,
                 immediate = true,
                 placeholder_string = 'Categories seperated with ";", type {{p}} to insert person categories',
-                value = LrView.bind('categories')
+                value = LrView.bind('categories'),
+                tooltip = "Categories seperated by ;"
             },
             f:checkbox{
                 title = '',
                 value = LrView.bind('categories_change'),
                 checked_value = true,
                 unchecked_value = false
+            }
+        },
+        f:row{
+            margin_top = 10,
+            margin_bottom = 20,
+            f:static_text{
+                width = LrView.share "label_width",
+                title = "Custom variables"
+            },            
+            f:static_text{
+                width = 14,
+                title = "v1"
+            },
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 11,
+                immediate = true,
+                placeholder_string = '{{v1}}',
+                value = LrView.bind('v1'),
+                tooltip = "Text to replace {{v1}} in the fields above"
+            },           
+            f:static_text{
+                width = 14,
+                title = "v2"
+            },
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 11,
+                immediate = true,
+                placeholder_string = '{{v2}}',
+                value = LrView.bind('v2'),
+                tooltip = "Text to replace {{v2}} in the fields above"
+            },           
+            f:static_text{
+                width = 14,
+                title = "v3"
+            },
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 11,
+                immediate = true,
+                placeholder_string = '{{v3}}',
+                value = LrView.bind('v3'),
+                tooltip = "Text to replace {{v3}} in the fields above"
             }
         },
         f:separator{fill_horizontal = 1},
@@ -276,6 +325,7 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                     end
                 end
             },
+            f:separator{fill_vertical = 1},
             f:push_button{
                 title = 'import People List',
                 action = function(args)
@@ -353,87 +403,75 @@ LrFunctionContext.callWithContext('dialogExample', function(context)
                 catalog:withWriteAccessDo('Set Filename', function()
                     -- catalog:withPrivateWriteAccessDo('Set Filename', function()
 
+                    local data = {
+                        v1 = props.v1,
+                        v2 = props.v2,
+                        v3 = props.v3,
+                        f = fname.preName
+                    }
+
                     local des
                     local titleNames = u.getNames(regions, {
                         last = (props.title_de and " und ") or " and ",
                         inter = ", "
                     });
 
-                    if titleNames ~= '' and (#regions < 6) and props.title then                        
+                    des = '{{f}}'
 
-                        photo:setRawMetadata('title',
-                            string.gsub(
-                                string.gsub(props.title,
-                                            '{{f}}',
-                                            fname.preName),
-                                '{{p}}', titleNames
-                            )
-                        )
+                    if titleNames ~= '' and (#regions < 6) and props.title then                             
+                        data.p = titleNames;
+                        des = props.title;                        
                     elseif props.title_sans then
-                        photo:setRawMetadata('title', string.gsub(props.title_sans, '{{f}}', fname.preName))
+                        des = props.title_sans
                     end
 
+                    des = u.renderMustache(des, data)
+
+                    photo:setRawMetadata('title', des);
+                    photo:setRawMetadata('headline', des:gsub(fname.preName, ''):match('^%s*(.*%S)') or '');
+
                     if props.description_de then
-                        --[[
-                        --caption
-                        
-                        des = string.gsub(props.description_de, '{{p}}', u.getNames(regions, {
-                            last = " und ",
-                            inter = ", ",
-                        }) )
 
-                        des = string.gsub( string.gsub(des, '%[%[:de:', ''), '|%]%]', '')
-
-                        photo:setPropertyForPlugin( _PLUGIN, 'caption_de', des )
-                        ]] --
-
-                        -- description
-
-                        des = string.gsub(props.description_de, '{{p}}',
-                                          u.getNames(regions, {
+                        data.p = u.getNames(regions, {
                             last = " und ",
                             inter = ", ",
                             before = "[[:de:",
                             after = "|]]"
-                        }))
-                        photo:setPropertyForPlugin(_PLUGIN, 'description_de',
-                                                   des)
+                        })
+
+                        des = u.renderMustache(props.description_de, data)
+                        photo:setPropertyForPlugin(_PLUGIN, 'description_de', des)
                     end
 
                     if props.description_en then
 
                         -- caption
 
-                        des = string.gsub(props.description_en, '{{p}}',
-                                          u.getNames(regions, {
+                        data.p =  u.getNames(regions, {
                             last = " and ",
                             inter = ", "
-                        }))
+                        })
 
-                        des = string.gsub(string.gsub(des, '%[%[:en:', ''),
-                                          '|%]%]', '')
+                        des = u.renderMustache(props.description_en, data)
+                        photo:setPropertyForPlugin(_PLUGIN, 'caption_en', u.stripWikiLinks(des) )
 
-                        photo:setPropertyForPlugin(_PLUGIN, 'caption_en', des)
-
-                        -- description
-
-                        des = string.gsub(props.description_en, '{{p}}',
-                                          u.getNames(regions, {
+                        data.p =   u.getNames(regions, {
                             last = " and ",
                             inter = ", ",
                             before = "[[:en:",
                             after = "|]]"
-                        }))
-                        photo:setPropertyForPlugin(_PLUGIN, 'description_en',
-                                                   des)
+                        })
+                        des = u.renderMustache(props.description_en, data)
+                        photo:setPropertyForPlugin(_PLUGIN, 'description_en',des)
                     end
 
                     if props.categories then
-                        local des = string.gsub(props.categories, '{{p}}',
-                                                u.getNames(regions, {
+                        data.p = u.getNames(regions, {
                             inter = "",
                             after = ";"
-                        }))
+                        })
+
+                        des = u.renderMustache(props.categories, data)
                         photo:setPropertyForPlugin(_PLUGIN, 'categories', des)
                     end
 

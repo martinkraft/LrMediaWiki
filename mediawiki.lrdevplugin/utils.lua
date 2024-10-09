@@ -18,10 +18,19 @@ local u = {}
 -- Write trace information to the logger.
 
 
+local logFilePath = "./utils.log" -- Replace with the actual file path
+
 function u.log( message )
 	-- myLogger:trace( message )
-    LrDialogs.message( "FixFilename", message, "info" )
+    --LrDialogs.message( "FixFilename", message, "info" )
+
+    local logFile = io.open(logFilePath, "a")
+    if logFile then
+        logFile:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. message .. "\n")
+        logFile:close()
+    end
 end
+
 
 function u.split(inputoptions, sep)
     if sep == nil then
@@ -36,6 +45,14 @@ end
 
 -- Functions -------------------------------------------------------------------
 
+--- Joins the elements of a table into a string using a specified delimiter.
+--- 
+--- @param a table The table containing the elements to be joined.
+--- @param limiter string The delimiter to be used for joining the elements.
+--- @param prefix string (optional) A prefix to be added before each joined element.
+--- @param suffix string (optional) A suffix to be added after each joined element.
+--- @param lastlimiter string (optional) A delimiter to be used before the last element.
+--- @return string The joined string.
 function u.join( a, limiter, prefix, suffix, lastlimiter )
     --log(a)
     local l = #a
@@ -71,9 +88,11 @@ function u.print_r(arr, indentLevel)
             options = options..indentStr..index..": "..value.."\n"
         end
     end
+
     return options
 end
 
+--[[
 function u.getTitle( photo, label )
     local filename = string.sub( tostring(photo:getFormattedMetadata('fileName')),  0, -5)
     underscore, num, oldlabel = string.match(filename, 'MJK(_*)(%d*)(.*)')
@@ -92,7 +111,11 @@ function u.getTitle( photo, label )
 
     return title
 end
+]]--
 
+--- Extracts various parts of a photo's file name.
+-- @param photo The photo object.
+-- @return A table containing the extracted parts of the file name.
 function u.getNameParts(photo)
     local fn = tostring(photo:getFormattedMetadata('fileName'))
     local r = {
@@ -101,10 +124,9 @@ function u.getNameParts(photo)
         ext = fn:match("^.+%.(.+)$"),
     }
     r.extLower = string.lower( r.ext )
-    r.number = r.name:match("([0-9]+)")
-    r.preName = r.name:match("^(.*" .. r.number .. ')')
+    r.number = r.name:match("%d%d%d+%-?%d*") --Find number pattern
+    r.preName = r.name:match("^(.*" .. r.number:gsub("([^%w])", "%%%1") .. ')') --number with leading text
     
-
     return r
 end
 
@@ -159,7 +181,6 @@ function u.nodeAttributes( node )
     return node.attributes()
 end
 
-
 function u.getAttributes(node, map)
     local attributes = node:attributes()
     if ( type(map) ~= 'table') then 
@@ -178,6 +199,12 @@ end
 
 -- PHOTO ------------------------
 
+-- Function: checkXmp
+-- Description: Checks if the given photo has an XMP metadata file associated with it. If not, it reads the XMP file and stores it in the photo object.
+-- Parameters:
+--   - photo: The photo object to check.
+-- Returns:
+--   - The parsed XMP data as an XML object.
 function u.checkXmp(photo)
     if (photo.xmp == nil) then
         local xmpPath = LrPathUtils.replaceExtension(photo:getRawMetadata('path'), 'xmp')
@@ -187,31 +214,7 @@ function u.checkXmp(photo)
     return photo.xmp
 end
 
-function u.getRegions(photo)
-
-    local xmp = u.checkXmp(photo)
-    local regions = {}
-
-    
-    --u.log( photo:getFormattedMetadata('sidecars') )
-
-    local nRegionsList = u.findNodeByName(xmp, "RegionList")
-
-    if (nRegionsList ~= nil) then 
-
-        nRegionsList = nRegionsList:childAtIndex(1) 
-
-        
-        local d = parseDimensions(photo:getFormattedMetadata("croppedDimensions"))
-        local devSettings = photo:getDevelopSettings()
-        local cropRegion = {
-            x = devSettings['CropLeft'],
-            y = devSettings['CropTop'],
-            h = devSettings['CropBottom'] - devSettings['CropTop'],
-            w = devSettings['CropRight'] - devSettings['CropLeft'],
-        }
-
-        --[[ --DevSettings
+--[[ --DevSettings
 
 Version="14.1",
 ProcessVersion="11.0",
@@ -324,7 +327,30 @@ HasCrop="True",
 AlreadyApplied="False",
 RawFileName="MJK_68174 Anna Maria Mühe and Hannah Herzsprung (Berlinale 2020).CR2"
 
-        ]]--
+]]--
+
+function u.getRegions(photo)
+
+    local xmp = u.checkXmp(photo)
+    local regions = {}
+    
+    --u.log( photo:getFormattedMetadata('sidecars') )
+    local nRegionsList = u.findNodeByName(xmp, "RegionList")
+
+    if (nRegionsList ~= nil) then 
+
+        nRegionsList = nRegionsList:childAtIndex(1) 
+        
+        local devSettings = photo:getDevelopSettings()
+
+        local d = parseDimensions(photo:getFormattedMetadata("croppedDimensions"))
+        local devSettings = photo:getDevelopSettings()
+        local cropRegion = {
+            x = devSettings['CropLeft'],
+            y = devSettings['CropTop'],
+            h = devSettings['CropBottom'] - devSettings['CropTop'],
+            w = devSettings['CropRight'] - devSettings['CropLeft'],
+        }
 
         local region
         local i = 1
@@ -376,6 +402,7 @@ function u.getNames(regions, options)
 
     options = options or {}
     options.inter = options.inter or ', '
+    options.lang = options.lang or nil
     options.last = options.last or options.inter
     options.before = options.before or ''
     options.after = options.after or ''
@@ -394,8 +421,18 @@ function u.getNames(regions, options)
     
     for i, region in pairs(regions) do
 
+        if string.find(region.name, " %((WMDE|WMAT|WMCH|WMF)%)") then
+            region.name = ":" .. region.name
+        end
+
         if region.name ~= nil then
-            resultStr = resultStr .. options.before .. region.name .. options.after
+            -- resultStr = resultStr .. options.before .. region.name .. options.after
+
+            if(options.lang ~= nil) then
+                resultStr = resultStr .. '[[:' .. options.lang..':' .. region.link .. '|'.. region.name .. ']]'
+            else
+                resultStr = resultStr .. region.name
+            end
         else 
             resultStr = resultStr .. options.unknown
         end
@@ -450,10 +487,23 @@ end
 
 -- mimic Handlebars-style templating
 function u.renderMustache(template, data)
-    return template:gsub("{{(.-)}}", data)
+    return template:gsub("{{(.-)}}", function(key)
+        local k, default = key:match("([^|]+)|?(.*)")
+        k = k:match("^%s*(.-)%s*$") -- trim whitespace
+        default = default ~= "" and default or nil
+        return data[k] ~= nil and data[k] ~= '' and data[k] or default or ''
+    end)
 end
 
 -- strip the text from WikiText-Links
+--- Strips wiki links from the given input string.
+--- 
+--- This function removes the wiki link syntax from the input string and returns the modified string.
+--- The wiki link syntax is in the format [[link|display text]], where 'link' is the target link and 'display text' is the text to be displayed.
+--- If the 'display text' is not provided, the function will attempt to extract it from the 'link' itself.
+--- 
+--- @param input The input string containing wiki links.
+--- @return The modified string with wiki links stripped.
 function u.stripWikiLinks(input)
 
     local function innerReplaceFunc(v1, v2, v3, v4)        
@@ -477,6 +527,48 @@ function u.stripWikiLinks(input)
     local output = input:gsub("%[%[([^%|%]]+)%|?([^%|%]]*)%]%]", replaceFunc)
     --u.log('output: '..output)
     return output
+end
+
+
+local LrFileUtils = import 'LrFileUtils'
+local LrTasks = import 'LrTasks'
+local LrApplication = import 'LrApplication'
+local LrPathUtils = import 'LrPathUtils'
+
+--TODO: Funktioniert nicht, weil XMP und Katalog nicht mit verschoben werden
+
+function u.renameFile(catalog, photo, newName)
+
+    LrTasks.startAsyncTask(function()
+        local catalog = LrApplication.activeCatalog()
+        local photo = catalog:getTargetPhoto()
+
+        -- Get the current photo path
+        local oldPath = photo:getRawMetadata('path')
+
+        -- Get the directory of the current photo
+        local dir = LrPathUtils.parent(oldPath)
+
+        -- Create the new path
+        local newPath = LrPathUtils.child(dir, newName)
+
+        -- Move the file to the new path (i.e., rename it)
+        local success, reason = LrFileUtils.move(oldPath, newPath)
+
+        if success then
+            -- Update the catalog to reflect the new file location
+            catalog:withWriteAccessDo("Update Photo Path", function()
+                local newPhoto = catalog:findPhotoByPath(newPath)
+                if newPhoto then
+                    catalog:setSelectedPhotos(newPhoto, {newPhoto})
+                end
+            end)
+        else
+            -- Handle the error
+            LrDialogs.showError("Could not rename file: " .. reason)
+        end
+    end)
+
 end
 
 -- RETURN ------------------------

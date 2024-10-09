@@ -431,7 +431,7 @@ function u.getNames(regions, options)
             if(options.lang ~= nil) then
                 resultStr = resultStr .. '[[:' .. options.lang..':' .. region.link .. '|'.. region.name .. ']]'
             else
-                resultStr = resultStr .. region.name
+                resultStr = resultStr .. options.before .. region.name .. options.after
             end
         else 
             resultStr = resultStr .. options.unknown

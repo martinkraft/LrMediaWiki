@@ -605,7 +605,9 @@ MediaWikiExportServiceProvider.processRenderedPhotos = function(functionContext,
 														LOC "$$$/LrMediaWiki/Export/UpdateOnlyPromptLabel=Update comment for all selected files")
 	end
 
-	MediaWikiInterface.prepareUpload(exportSettings.username, exportSettings.password, exportSettings.api_path, exportSettings.info_template)
+	--if not MediaWikiInterface.loggedIn then
+		MediaWikiInterface.prepareUpload(exportSettings.username, exportSettings.password, exportSettings.api_path, exportSettings.info_template)
+	--end
 
 	-- file names for gallery creation
 	local fileNames = {}

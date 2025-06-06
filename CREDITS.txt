@@ -1,2 +1,3 @@
 Robin Krahl <robin.krahl@wikipedia.de>
 Eckhard Henkel <eckhard.henkel@wikipedia.de>
+Martin Kraft <martin.kraft@wikipedia.de>

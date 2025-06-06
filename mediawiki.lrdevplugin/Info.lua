@@ -38,21 +38,31 @@ return {
 
 	LrExportMenuItems = {
 		{
-			title = "Search and Replace Metadata",
+			title = "🔍 Search and Replace Metadata",
 			file = "ToolSearchAndReplaceMetadata.lua",
 		},
 		{
-			title = "Search and Replace Filename",
+			title = "🔎 Search and Replace Filename",
 			file = "ToolSearchAndReplaceFilename.lua",
 		},
 		{
-			title = "Generate filename and description from persons",
+			title = "🚀 Generate filename and description from persons",
 			file = "ToolGenerateFromPersons.lua",
 		},
 		{
-			title = "Test",
+			title = "📄 Set title to file prefix and headline",
+			file = "ToolSetTitleToPrefixAndHeadline.lua",
+		},
+		{
+			title = "📄 Set title to file prefix and caption",
+			file = "ToolSetTitleToPrefixAndCaption.lua",
+		},
+		--[[
+		{
+			title = "❓ Test",
 			file = "ToolTest.lua",
 		},
+		--]]
 	},
 
 	VERSION = {

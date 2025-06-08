@@ -95,6 +95,15 @@ function u.print_r(arr, indentLevel)
     return options
 end
 
+-- Function to iterate through a map and set nil or empty values to the values of another map
+function u.setDefaults(map, defaults)
+    for key, value in pairs(defaults) do
+        if map[key] == nil or map[key] == '' then
+            map[key] = defaults[key]
+        end
+    end
+end
+
 --[[
 function u.getTitle( photo, label )
     local filename = string.sub( tostring(photo:getFormattedMetadata('fileName')),  0, -5)
@@ -518,14 +527,152 @@ function u.copyProps( fromOb, toOb, options )
     return toOb
 end
 
--- mimic Handlebars-style templating
+-- Mimic Mustache-style templating with default parameters
 function u.renderMustache(template, data)
+    return u.renderHandlebars(template, data)
+    --[[
     return template:gsub("{{(.-)}}", function(key)
-        local k, default = key:match("([^|]+)|?(.*)")
-        k = k:match("^%s*(.-)%s*$") -- trim whitespace
-        default = default ~= "" and default or nil
-        return data[k] ~= nil and data[k] ~= '' and data[k] or default or ''
+        -- Support multiple pipes for defaults: {{key|default1|default2}}
+        local parts = {}
+        for part in key:gmatch("[^|]+") do
+            table.insert(parts, part:match("^%s*(.-)%s*$")) -- trim whitespace
+        end
+        local k = parts[1]
+        -- Try data[k], else try each default in order
+        if data[k] ~= nil and data[k] ~= '' then
+            return data[k]
+        else
+            for i = 2, #parts do
+                if parts[i] ~= nil and parts[i] ~= '' then
+                    return parts[i]
+                end
+            end
+            return ''
+        end
     end)
+    ]]
+end
+
+-- Minimal Handlebars-style templating engine for Lua
+-- Supports: variables, dot notation, sections (#/), inverted sections (^), and basic if/each helpers
+
+local function getValue(data, key)
+    -- Dot notation: "a.b.c"
+    local val = data
+    for part in string.gmatch(key, "[^%.]+") do
+        if type(val) == "table" then
+            val = val[part]
+        else
+            return nil
+        end
+    end
+    return val
+end
+u.getValue = getValue
+
+local function renderSection(section, data, context, inverted)
+    local value = getValue(data, section.name)
+    local result = ""
+    if (not inverted and value) or (inverted and not value) then
+        if type(value) == "table" and not inverted then
+            if #value > 0 then
+                -- Array: iterate
+                for _, item in ipairs(value) do
+                    result = result .. u.renderHandlebars(section.content, item)
+                end
+            else
+                -- Object: use as context
+                result = result .. u.renderHandlebars(section.content, value)
+            end
+        elseif not inverted then
+            -- Truthy value: render section with current context
+            result = result .. u.renderHandlebars(section.content, data)
+        elseif inverted then
+            -- Inverted section: render if falsy
+            result = result .. u.renderHandlebars(section.content, data)
+        end
+    end
+    return result
+end
+
+function u.renderHandlebars(template, data)
+    -- Parse sections (supports nested)
+    local function parseSections(tpl)
+        local stack = {}
+        local sections = {}
+        local i = 1
+        while i <= #tpl do
+            local s, e, tag, name = tpl:find("{{#([%w%.%_]+)}}", i)
+            local s_inv, e_inv, tag_inv, name_inv = tpl:find("{{%^(%w[%w%.%_]*)}}", i)
+            if s and (not s_inv or s < s_inv) then
+                table.insert(stack, {name=name, start=e+1, inverted=false, tagStart=s, tagEnd=e})
+                i = e+1
+            elseif s_inv then
+                table.insert(stack, {name=name_inv, start=e_inv+1, inverted=true, tagStart=s_inv, tagEnd=e_inv})
+                i = e_inv+1
+            else
+                local s_end, e_end, end_name = tpl:find("{{/(%w[%w%.%_]*)}}", i)
+                if s_end and #stack > 0 then
+                    local last = table.remove(stack)
+                    if last.name == end_name then
+                        -- Section found
+                        local section = {
+                            name = last.name,
+                            content = tpl:sub(last.start, s_end-1),
+                            inverted = last.inverted,
+                            tagStart = last.tagStart,
+                            tagEnd = e_end
+                        }
+                        table.insert(sections, section)
+                        -- Replace section in template with a marker
+                        tpl = tpl:sub(1, last.tagStart-1) ..
+                              "{{{__section_"..#sections.."}}}" ..
+                              tpl:sub(e_end+1)
+                        i = last.tagStart + #("{{{__section_"..#sections.."}}}")
+                    else
+                        -- Malformed template
+                        i = e_end+1
+                    end
+                else
+                    break
+                end
+            end
+        end
+        return tpl, sections
+    end
+
+    -- Recursively render template with sections
+    local function render(tpl, data)
+        local parsed_tpl, sections = parseSections(tpl)
+        -- Render sections first
+        for idx, section in ipairs(sections) do
+            local rendered = renderSection(section, data, data, section.inverted)
+            parsed_tpl = parsed_tpl:gsub("{{{__section_"..idx.."}}}", rendered)
+        end
+        -- Render variables and helpers
+        parsed_tpl = parsed_tpl:gsub("{{([%w%._| ]+)}}", function(key)
+            -- Support default values with pipes
+            local parts = {}
+            for part in key:gmatch("[^|]+") do
+                table.insert(parts, part:match("^%s*(.-)%s*$"))
+            end
+            local k = parts[1]
+            local val = getValue(data, k)
+            if val ~= nil and val ~= '' then
+                return tostring(val)
+            else
+                for i = 2, #parts do
+                    if parts[i] ~= nil and parts[i] ~= '' then
+                        return parts[i]
+                    end
+                end
+                return ''
+            end
+        end)
+        return parsed_tpl
+    end
+
+    return render(template, data)
 end
 
 -- strip the text from WikiText-Links

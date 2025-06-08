@@ -19,36 +19,45 @@ local u = require 'utils'
 
 LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                                   function(context)
-
-    local prefs = import'LrPrefs'.prefsForPlugin()
-
-    prefs.generatorPresets = prefs.generatorPresets or {
-        -- prefs.generatorPresets = {
-        {
-            title = "empty",
-            value = {
-                title = '{{f}} {{p}}',
-                title_sans = '{{f}}',
-                title_de = true,
-                description_de = '{{p}}',
-                description_en = '{{p}}',
-                categories = '{{p}}',
-                v1 = '',
-                v2 = '',
-                v3 = ''
-            }
-        }
-    }
-
-    prefs.nicknameList = prefs.nicknameList or {}
-    prefs.generator = prefs.generator or prefs.generatorPresets[1].value
-    -- prefs.generator = prefs.generatorPresets[1].value
-
     local u = require 'utils'
     local LrBinding = import 'LrBinding'
 
-    local props = u.copyProps(prefs.generator,
-                              LrBinding.makePropertyTable(context))
+    local prefs = import'LrPrefs'.prefsForPlugin()
+    prefs.generatorPreset = {
+        title = "empty",
+        value = {
+            _version = 0.11,
+            title = '{{f}} {{p}}',
+            title_sans = '{{f}}',
+            title_de = true,
+            title_change = true,
+            description_de = '{{p}}',
+            description_de_change = true,
+            description_en = '{{p}}',
+            description_en_change = true,
+            description_other = '{{p}}',
+            description_other_change = true,
+            categories = '{{p}}',
+            categories_change = true,
+            v1 = '',
+            v2 = '',
+            v3 = '',
+            useNicknames = false
+        }
+    }
+
+    prefs.generatorPresets = prefs.generatorPresets or {prefs.generatorPreset}
+    prefs.nicknameList = prefs.nicknameList or {}
+    prefs.generator = prefs.generator or prefs.generatorPresets[1].value
+
+    -- check if the generator is up to date
+    if not prefs.generator._version or prefs.generator._version < prefs.generatorPreset.value._version then
+        prefs.generator = prefs.generatorPreset.value
+    else
+        u.setDefaults(prefs.generator, prefs.generatorPreset.value)
+    end
+
+    local props = u.copyProps(prefs.generator, LrBinding.makePropertyTable(context))
     local catalog = LrApplication.activeCatalog()
     local photos = catalog:getTargetPhotos()
     -- local photo = catalog:getTargetPhoto()
@@ -127,7 +136,8 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                 title = '',
                 value = LrView.bind('description_en_change'),
                 checked_value = true,
-                unchecked_value = false
+                unchecked_value = false,
+                immediate = true
             }
         },
         f:row{
@@ -149,7 +159,31 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                 title = '',
                 value = LrView.bind('description_de_change'),
                 checked_value = true,
-                unchecked_value = false
+                unchecked_value = false,
+                immediate = true
+            }
+        },
+        f:row{
+            margin_top = 10,
+            f:static_text{
+                width = LrView.share "label_width",
+                title = "Description (other)"
+            },
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 40,
+                height_in_lines = 5,
+                immediate = true,
+                placeholder_string = 'type {{p}} to insert person names',
+                value = LrView.bind('description_other'),
+                wraps = true
+            },
+            f:checkbox{
+                title = '',
+                value = LrView.bind('description_other_change'),
+                checked_value = true,
+                unchecked_value = false,
+                immediate = true
             }
         },
         f:row{
@@ -171,7 +205,8 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                 title = '',
                 value = LrView.bind('categories_change'),
                 checked_value = true,
-                unchecked_value = false
+                unchecked_value = false,
+                immediate = true
             }
         },
         f:row{
@@ -375,7 +410,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             prefs.generator[key] = props[key]
         end
 
-        local data = LrTasks.startAsyncTask(function()
+        local data = LrTasks.startAsyncTask( function()
             local data = ''
 
             for key, photo in pairs(photos) do
@@ -456,27 +491,30 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                     end
 
                     local des
-                    local titleNames = u.getNames(regions, {
-                        last = (props.title_de and " und ") or " and ",
-                        inter = ", "
-                    });
+                    local titleNames
 
-                    des = '{{f}}'
+                    if props.title_change then
+                        titleNames = u.getNames(regions, {
+                            last = (props.title_de and " und ") or " and ",
+                            inter = ", "
+                        });
+                        des = '{{f}}'
 
-                    if titleNames ~= '' and (#regions < 6) and props.title then
-                        data.p = titleNames;
-                        des = props.title;
-                    elseif props.title_sans then
-                        des = props.title_sans
+                        if titleNames ~= '' and (#regions < 6) and props.title then
+                            data.p = titleNames;
+                            des = props.title;
+                        elseif props.title_sans then
+                            des = props.title_sans
+                        end
+
+                        des = u.renderMustache(des, data)
+
+                        photo:setRawMetadata('title', des);
+                        photo:setRawMetadata('caption', des:gsub(fname.preName, '')
+                                                :match('^%s*(.*%S)') or '');
                     end
 
-                    des = u.renderMustache(des, data)
-
-                    photo:setRawMetadata('title', des);
-                    photo:setRawMetadata('caption', des:gsub(fname.preName, '')
-                                             :match('^%s*(.*%S)') or '');
-
-                    if props.description_de then
+                    if props.description_de_change and props.description_de then
 
                         data.p = u.getNames(regions, {
                             last = " und ",
@@ -491,7 +529,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                                                    des)
                     end
 
-                    if props.description_en then
+                    if props.description_en_change and props.description_en then
 
                         -- caption
                         data.p = u.getNames(regions,
@@ -513,7 +551,22 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                                                    des)
                     end
 
-                    if props.categories then
+                    if props.description_other_change and props.description_other then
+
+                        data.p = u.getNames(regions, {
+                            last = " et ",
+                            inter = ", ",
+                            lang = "fr",
+                            before = "[[:fr:",
+                            after = "|]]"
+                        })
+
+                        des = u.renderMustache(props.description_other, data)
+                        photo:setPropertyForPlugin(_PLUGIN, 'description_other',
+                                                   des)
+                    end
+
+                    if props.categories_change and props.categories then
                         data.p = u.getNames(regions, {
                             inter = "",
                             after = ";",
@@ -525,9 +578,10 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                     end
 
                     if regions[2] then
-                        photo:setPropertyForPlugin(_PLUGIN, 'otherFields',
-                                                   u.getImageNotes(regions,
-                                                                   photo))
+                        photo:setPropertyForPlugin(_PLUGIN, 
+                            'otherFields',
+                            u.getImageNotes(regions, photo)
+                        )
                     end
 
                 end)

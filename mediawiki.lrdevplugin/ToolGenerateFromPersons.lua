@@ -10,6 +10,7 @@ local LrPrefs = import 'LrPrefs'
 local LrTasks = import 'LrTasks'
 local LrView = import 'LrView'
 local LrXml = import 'LrXml'
+local LrHttp = import 'LrHttp'
 
 -- Other Libraries
 local Info = require 'Info'
@@ -17,10 +18,41 @@ local MediaWikiUtils = require 'MediaWikiUtils'
 local json = require 'JSON'
 local u = require 'utils'
 
+
 LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                                   function(context)
     local u = require 'utils'
     local LrBinding = import 'LrBinding'
+
+    u.registerHelper('p', function(data, lastJoint, lang, interJoint)
+        local props = context.propertyTable
+        --local regions = props.regions or {}
+
+        lang = lang or data._pParams.lang or nil
+        lastJoint = lastJoint or data._pParams.lastJoint or 'and'
+
+        -- Check if andWord is punctuation (only non-word characters)
+        if lastJoint and lastJoint:match("^%p+$") then
+            -- leave as is
+            interJoint = interJoint or lastJoint
+        else
+            lastJoint = ' ' .. (lastJoint or '') .. ' '
+            interJoint = interJoint or ', '
+        end
+
+        u.log('u.getNames: ' .. (lang or 'nil') .. ' ' .. lastJoint .. ' ' ..
+                  json:encode(data) or 'nil');
+
+        local names = u.getNames(data._regions, {
+            last = lastJoint,
+            inter = interJoint,
+            lang = lang,
+            before = (lang and '[[:'..lang..':') or '',
+            after = (lang and '|]]') or '',
+            returnLink = data._pParams.returnLink or false
+        })
+        return names
+    end);
 
     local prefs = import'LrPrefs'.prefsForPlugin()
     prefs.generatorPreset = {
@@ -87,7 +119,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             },
             f:edit_field{
                 fill_horizonal = 1,
-                width_in_chars = 36,
+                width_in_chars = 40,
                 height_in_lines = 1,
                 immediate = true,
                 placeholder_string = 'filename prefix (incl. no) = {{f}}, fileumber = {{n}}, persons = {{p}}',
@@ -95,7 +127,6 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                 wraps = false,
                 tooltip = varInfo
             },
-            f:checkbox{title = 'de, ', value = bind 'title_de'},
             f:checkbox{title = '', value = bind 'title_change'}
         },
         f:row{
@@ -124,7 +155,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             },
             f:edit_field{
                 fill_horizonal = 1,
-                width_in_chars = 40,
+                width_in_chars = 38,
                 height_in_lines = 5,
                 immediate = true,
                 placeholder_string = 'type {{p}} to insert person names',
@@ -138,6 +169,16 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                 checked_value = true,
                 unchecked_value = false,
                 immediate = true
+            },
+            f:push_button{
+                width_in_chars = 1,
+                title = '⥦',
+                action = function(args)
+                    local des = props.description_en or ''
+                    des = u.encode_uri(des)
+                    -- open browser with Use {{f}} for filename, \n{{p}} for person name(s), \n{{n}} for file number, \n{{y}} for year, \n{{m}} for month, \n{{d}} for day, \n{{hl}} for metadata headline, \n{{cap}} for metadata caption
+                    LrHttp.openUrlInBrowser('https://www.deepl.com/de/translator#en/de/' .. des)
+                end
             }
         },
         f:row{
@@ -470,6 +511,11 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                     -- catalog:withPrivateWriteAccessDo('Set Filename', function()
 
                     local data = {
+                        _regions = regions,
+                        _pParams = {
+                            lastJoint = nil,
+                            lang = nil
+                        },
                         v1 = props.v1 or '',
                         v2 = props.v2 or '',
                         v3 = props.v3 or '',
@@ -491,17 +537,26 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                     end
 
                     local des
+
+                    -- TODO: Filter Regions
                     local titleNames
+                    local baseNames = u.getNames(regions, {
+                            last = " ++ ",
+                            inter = ", ",
+                            lang = "en",
+                            before = "[[:en:",
+                            after = "|]]"
+                        })
 
                     if props.title_change then
-                        titleNames = u.getNames(regions, {
-                            last = (props.title_de and " und ") or " and ",
-                            inter = ", "
-                        });
+
+                        data._pParams = {
+                            lastJoint = 'and',
+                            lang = nil
+                        }
                         des = '{{f}}'
 
-                        if titleNames ~= '' and (#regions < 6) and props.title then
-                            data.p = titleNames;
+                        if (#regions > 0) and (#regions < 6) and props.title then
                             des = props.title;
                         elseif props.title_sans then
                             des = props.title_sans
@@ -516,13 +571,10 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
 
                     if props.description_de_change and props.description_de then
 
-                        data.p = u.getNames(regions, {
-                            last = " und ",
-                            inter = ", ",
-                            lang = "de",
-                            before = "[[:de:",
-                            after = "|]]"
-                        })
+                        data._pParams = {
+                            lastJoint = 'und',
+                            lang = 'de'
+                        }
 
                         des = u.renderMustache(props.description_de, data)
                         photo:setPropertyForPlugin(_PLUGIN, 'description_de',
@@ -531,21 +583,18 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
 
                     if props.description_en_change and props.description_en then
 
-                        -- caption
-                        data.p = u.getNames(regions,
-                                            {last = " and ", inter = ", "})
+                        data._pParams = {
+                            lastJoint = 'and',
+                            lang = 'en'
+                        }
 
                         des = u.renderMustache(props.description_en, data)
                         photo:setPropertyForPlugin(_PLUGIN, 'caption_en',
                                                    u.stripWikiLinks(des))
-
-                        data.p = u.getNames(regions, {
-                            last = " and ",
-                            inter = ", ",
-                            lang = "en",
-                            before = "[[:en:",
-                            after = "|]]"
-                        })
+                        
+                        data._pParams = {
+                            lastJoint = 'and'
+                        }
                         des = u.renderMustache(props.description_en, data)
                         photo:setPropertyForPlugin(_PLUGIN, 'description_en',
                                                    des)
@@ -553,13 +602,10 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
 
                     if props.description_other_change and props.description_other then
 
-                        data.p = u.getNames(regions, {
-                            last = " et ",
-                            inter = ", ",
-                            lang = "fr",
-                            before = "[[:fr:",
-                            after = "|]]"
-                        })
+                        data._pParams = {
+                            lastJoint = 'et',
+                            lang = 'fr'
+                        }
 
                         des = u.renderMustache(props.description_other, data)
                         photo:setPropertyForPlugin(_PLUGIN, 'description_other',
@@ -567,22 +613,24 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                     end
 
                     if props.categories_change and props.categories then
-                        data.p = u.getNames(regions, {
-                            inter = "",
-                            after = ";",
+                        
+                        data._pParams = {
+                            lastJoint = ';',
                             returnLink = true
-                        })
+                        }
 
                         des = u.renderMustache(props.categories, data)
                         photo:setPropertyForPlugin(_PLUGIN, 'categories', des)
                     end
 
+                    --[[
                     if regions[2] then
                         photo:setPropertyForPlugin(_PLUGIN, 
                             'otherFields',
                             u.getImageNotes(regions, photo)
                         )
                     end
+                    ]]
 
                 end)
             end

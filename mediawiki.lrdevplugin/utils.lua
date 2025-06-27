@@ -17,8 +17,7 @@ local u = {}
 --------------------------------------------------------------------------------
 -- Write trace information to the logger.
 
-
-local logFilePath = _PLUGIN.path .. "utils.log"
+local logFilePath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "LrMediaWikiUtils" .. os.date("[%Y-%m-%d]") .. ".log")
 
 function u.log( message )
 	-- myLogger:trace( message )
@@ -32,6 +31,14 @@ function u.log( message )
         -- Zeige eine Fehlermeldung an, wenn die Datei nicht geöffnet werden kann
         --LrDialogs.message("Fehler", "Die Logdatei konnte nicht geöffnet werden: " .. logFilePath, "critical")
     end
+end
+
+local function _encode_uri_char(char)
+    return string.format('%%%0X', string.byte(char))
+end
+
+function u.encode_uri(uri)
+    return (string.gsub(uri, "[^%a%d%-_%.!~%*'%(%);/%?:@&=%+%$,#%|]", _encode_uri_char))
 end
 
 
@@ -498,6 +505,7 @@ function parseDimensions(str)
     }
 end
 
+-- TODO: Filter ImageNotes by the same categories as other names
 function u.getImageNotes(regions, photo)
 
     local resultStr = ''   
@@ -529,7 +537,13 @@ end
 
 -- Mimic Mustache-style templating with default parameters
 function u.renderMustache(template, data)
-    return u.renderHandlebars(template, data)
+    local str = u.renderHandlebars(template, data)
+
+    -- Replace \{\{ and \}\} with {{ and }} to keep MediaWiki Templates
+    str = str:gsub("\\{\\{", "{{"):gsub("\\}\\}", "}}")
+    
+    return str
+
     --[[
     return template:gsub("{{(.-)}}", function(key)
         -- Support multiple pipes for defaults: {{key|default1|default2}}
@@ -554,7 +568,7 @@ function u.renderMustache(template, data)
 end
 
 -- Minimal Handlebars-style templating engine for Lua
--- Supports: variables, dot notation, sections (#/), inverted sections (^), and basic if/each helpers
+-- Supports: variables, dot notation, sections (#/), inverted sections (^), helpers, and basic if/each helpers
 
 local function getValue(data, key)
     -- Dot notation: "a.b.c"
@@ -569,6 +583,13 @@ local function getValue(data, key)
     return val
 end
 u.getValue = getValue
+
+-- Helper registry
+u.helpers = {}
+
+function u.registerHelper(name, fn)
+    u.helpers[name] = fn
+end
 
 local function renderSection(section, data, context, inverted)
     local value = getValue(data, section.name)
@@ -649,8 +670,31 @@ function u.renderHandlebars(template, data)
             local rendered = renderSection(section, data, data, section.inverted)
             parsed_tpl = parsed_tpl:gsub("{{{__section_"..idx.."}}}", rendered)
         end
-        -- Render variables and helpers
-        parsed_tpl = parsed_tpl:gsub("{{([%w%._| ]+)}}", function(key)
+        -- Render variables, helpers, and helpers with arguments
+        parsed_tpl = parsed_tpl:gsub("{{([%w%._]+)%s*([^}]*)}}", function(key, args)
+            key = key:match("^%s*(.-)%s*$")
+            args = args and args:match("^%s*(.-)%s*$") or ""
+            -- Check for helper
+            if u.helpers[key] then
+                -- Split args by spaces, but keep quoted strings together
+                local argList = {}
+
+                for arg in string.gmatch(args, "%S+") do
+                    table.insert(argList, arg)
+                end
+
+                -- TODO: Handle quoted arguments
+
+                --[[for arg in string.gmatch(args, "%s*(\"[^\"]*\"|%S+)") do
+                    -- Remove surrounding quotes if present
+                    local a = arg:gsub('^"(.-)"$', "%1")
+                    u.log('helper arg: ' .. a)
+                    table.insert(argList, a)
+                end]]
+                u.log('helper['..key..']( '.. json:encode(argList) ..' | >'..args..'< )' );
+                -- Provide data as first argument, then parsed args
+                return u.helpers[key](data, unpack(argList))
+            end
             -- Support default values with pipes
             local parts = {}
             for part in key:gmatch("[^|]+") do
@@ -675,6 +719,10 @@ function u.renderHandlebars(template, data)
     return render(template, data)
 end
 
+
+
+--------------------------------------------------------------------------------
+-- Strip WikiText Links --------------------------------------------------------
 -- strip the text from WikiText-Links
 --- Strips wiki links from the given input string.
 --- 

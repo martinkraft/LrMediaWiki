@@ -34,10 +34,10 @@ local data = LrTasks.startAsyncTask(function()
             --u.log('headline:'..headline)            
             headline = (headline and headline:gsub("^%s*(.-)%s*$", " %1")) or ''
 
-            photo:setRawMetadata('title', fname.preName..headline)
-
-            --u.renameFile(catalog, photo, fname.preName..headline..'.'..fname.ext)
-            
+            if headline ~= '' then
+                photo:setRawMetadata('title', fname.preName..headline)
+                --u.renameFile(catalog, photo, fname.preName..headline..'.'..fname.ext)
+            end
         end
 
     end)

@@ -26,17 +26,25 @@ local data = LrTasks.startAsyncTask(function()
     
         for key,photo in pairs(photos) do 
             --u.log( photo:getFormattedMetadata('fileName') )
-            --u.log( photo:getFormattedMetadata('personShown') )
             
             local fname = u.getNameParts(photo)
             local headline = photo:getFormattedMetadata('headline')
+            local title = photo:getFormattedMetadata('title')
 
             --u.log('headline:'..headline)            
             headline = (headline and headline:gsub("^%s*(.-)%s*$", " %1")) or ''
 
-            photo:setRawMetadata('title', fname.preName..headline)
+            if headline ~= '' then
+                title = fname.preName..headline
+                --u.renameFile(catalog, photo, fname.preName..headline..'.'..fname.ext)
+            end
 
-            --u.renameFile(catalog, photo, fname.preName..headline..'.'..fname.ext)
+            -- remove whitspaces, underscores and minuses at the end of the title
+            title = (title and title:gsub("[-_ ]*$", "")) or ''
+
+            if title ~= '' then
+                photo:setRawMetadata('title', title)
+            end          
             
         end
 

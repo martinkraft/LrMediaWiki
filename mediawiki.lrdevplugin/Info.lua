@@ -57,6 +57,10 @@ return {
 			title = "📄 Set title to file prefix and caption",
 			file = "ToolSetTitleToPrefixAndCaption.lua",
 		},
+		{
+			title = "📄 Set title to filename (if empty)",
+			file = "ToolSetTitleToFilename.lua",
+		},
 		--[[
 		{
 			title = "❓ Test",

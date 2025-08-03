@@ -17,19 +17,20 @@ local u = {}
 --------------------------------------------------------------------------------
 -- Write trace information to the logger.
 
-local logFilePath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'), "LrMediaWikiUtils" .. os.date("[%Y-%m-%d]") .. ".log")
+local logFilePath = LrPathUtils.child(LrPathUtils.getStandardFilePath('documents'),
+    "LrMediaWikiUtils" .. os.date("[%Y-%m-%d]") .. ".log")
 
-function u.log( message )
-	-- myLogger:trace( message )
-    --LrDialogs.message( "FixFilename", message, "info" )
+function u.log(message)
+    -- myLogger:trace( message )
+    -- LrDialogs.message( "FixFilename", message, "info" )
 
     local logFile = io.open(logFilePath, "a")
     if logFile then
         logFile:write(os.date("[%Y-%m-%d %H:%M:%S] ") .. message .. "\n")
         logFile:close()
-    --else
+        -- else
         -- Zeige eine Fehlermeldung an, wenn die Datei nicht geöffnet werden kann
-        --LrDialogs.message("Fehler", "Die Logdatei konnte nicht geöffnet werden: " .. logFilePath, "critical")
+        -- LrDialogs.message("Fehler", "Die Logdatei konnte nicht geöffnet werden: " .. logFilePath, "critical")
     end
 end
 
@@ -41,14 +42,13 @@ function u.encode_uri(uri)
     return (string.gsub(uri, "[^%a%d%-_%.!~%*'%(%);/%?:@&=%+%$,#%|]", _encode_uri_char))
 end
 
-
 function u.split(inputoptions, sep)
     if sep == nil then
-            sep = "%s"
+        sep = "%s"
     end
-    local t={}
-    for options in string.gmatch(inputoptions, "([^"..sep.."]+)") do
-            table.insert(t, options)
+    local t = {}
+    for options in string.gmatch(inputoptions, "([^" .. sep .. "]+)") do
+        table.insert(t, options)
     end
     return t
 end
@@ -63,8 +63,8 @@ end
 --- @param suffix string (optional) A suffix to be added after each joined element.
 --- @param lastlimiter string (optional) A delimiter to be used before the last element.
 --- @return string The joined string.
-function u.join( a, limiter, prefix, suffix, lastlimiter )
-    --log(a)
+function u.join(a, limiter, prefix, suffix, lastlimiter)
+    -- log(a)
     local l = #a
 
     if not a or (l <= 1) then
@@ -73,29 +73,29 @@ function u.join( a, limiter, prefix, suffix, lastlimiter )
 
     a = {table.unpack(a)}
 
-    local options = lastlimiter and (lastlimiter .. table.remove( a, l-1)) or '' 
+    local options = lastlimiter and (lastlimiter .. table.remove(a, l - 1)) or ''
 
-    return table.concat( persons, limiter ) .. options;
+    return table.concat(persons, limiter) .. options;
 end
 
 function u.print_r(arr, indentLevel)
     local options = ""
     local indentStr = "#"
 
-    if(indentLevel == nil) then
+    if (indentLevel == nil) then
         print(print_r(arr, 0))
         return
     end
 
     for i = 0, indentLevel do
-        indentStr = indentStr.."\t"
+        indentStr = indentStr .. "\t"
     end
 
-    for index,value in pairs(arr) do
+    for index, value in pairs(arr) do
         if type(value) == "table" then
-            options = options..indentStr..index..": \n"..print_r(value, (indentLevel + 1))
-        else 
-            options = options..indentStr..index..": "..value.."\n"
+            options = options .. indentStr .. index .. ": \n" .. print_r(value, (indentLevel + 1))
+        else
+            options = options .. indentStr .. index .. ": " .. value .. "\n"
         end
     end
 
@@ -130,7 +130,7 @@ function u.getTitle( photo, label )
 
     return title
 end
-]]--
+]] --
 
 --- Extracts various parts of a photo's file name.
 -- @param photo The photo object.
@@ -140,18 +140,18 @@ function u.getNameParts(photo)
     local r = {
         fullName = fn,
         name = fn:match("^(.+)%..+$"),
-        ext = fn:match("^.+%.(.+)$"),
+        ext = fn:match("^.+%.(.+)$")
     }
-    r.extLower = string.lower( r.ext )
-    r.number = r.name:match("%d%d%d+%-?%d*") --Find number pattern
-    r.preName = r.name:match("^(.*" .. r.number:gsub("([^%w])", "%%%1") .. ')') --number with leading text
-    
+    r.extLower = string.lower(r.ext)
+    r.number = r.name:match("%d%d%d+%-?%d*") -- Find number pattern
+    r.preName = r.name:match("^(.*" .. r.number:gsub("([^%w])", "%%%1") .. ')') -- number with leading text
+
     return r
 end
 
-function u.searchAndReplaceTitle( photo, searchStr, replaceStr )
-    local filename = string.sub( tostring(photo:getFormattedMetadata('fileName')),  0, -5)
-    --underscore, num, oldlabel = string.match(filename, 'MJK(_*)(%d*)(.*)')
+function u.searchAndReplaceTitle(photo, searchStr, replaceStr)
+    local filename = string.sub(tostring(photo:getFormattedMetadata('fileName')), 0, -5)
+    -- underscore, num, oldlabel = string.match(filename, 'MJK(_*)(%d*)(.*)')
 
     local title = filename
     title = title:gsub(searchStr, replaceStr)
@@ -159,50 +159,47 @@ function u.searchAndReplaceTitle( photo, searchStr, replaceStr )
     return title
 end
 
-
 -- XML ------------------------
 
-function u.findNodeByName( node, name )  
-    --u.log( tostring(node) )
+function u.findNodeByName(node, name)
+    -- u.log( tostring(node) )
 
-    if (node ~= nil and string.lower( node:type() ) == 'element') then
+    if (node ~= nil and string.lower(node:type()) == 'element') then
 
-        
-        if ( tostring(node:name()) == name) then 
+        if (tostring(node:name()) == name) then
             return node
-        else  
-            
+        else
 
             local count = node:childCount()
-        
+
             while (count > 0) do
                 local childNode = node:childAtIndex(count)
-                
+
                 if (childNode ~= nil) then
                     local value = u.findNodeByName(childNode, name)
-            
+
                     if (value ~= nil) then
                         return value
                     end
                 end
-        
+
                 count = count - 1
             end
 
             return nil
         end
-    else 
+    else
         return nil
     end
 end
 
-function u.nodeAttributes( node )  
+function u.nodeAttributes(node)
     return node.attributes()
 end
 
 function u.getAttributes(node, map)
     local attributes = node:attributes()
-    if ( type(map) ~= 'table') then 
+    if (type(map) ~= 'table') then
         map = {}
     end
 
@@ -210,7 +207,7 @@ function u.getAttributes(node, map)
     for key, attribute in pairs(attributes) do
         value = attribute['value']
         num = tonumber(value)
-        map[ string.lower(attribute['name']) ] = (num ~= nil) and num or value
+        map[string.lower(attribute['name'])] = (num ~= nil) and num or value
     end
 
     return map
@@ -228,17 +225,16 @@ function u.checkXmp(photo)
 
     if (photo.xmp == nil) then
 
-
         local filePath = photo:getRawMetadata('path')
         local fileExtension = string.lower(LrPathUtils.extension(photo:getRawMetadata('path')))
-    
+
         if fileExtension ~= "jpg" and fileExtension ~= "jpeg" then
             -- Check if the XMP file exists
             local xmpPath = LrPathUtils.replaceExtension(filePath, 'xmp')
             if not LrFileUtils.exists(xmpPath) then
                 return nil, "The XMP file does not exist."
             end
-            photo.xmp = LrXml.parseXml( LrFileUtils.readFile(xmpPath) )
+            photo.xmp = LrXml.parseXml(LrFileUtils.readFile(xmpPath))
         else
             -- Read the JPEG file and extract the XMP data
             if not LrFileUtils.exists(filePath) then
@@ -374,20 +370,20 @@ HasCrop="True",
 AlreadyApplied="False",
 RawFileName="MJK_68174 Anna Maria Mühe and Hannah Herzsprung (Berlinale 2020).CR2"
 
-]]--
+]] --
 
 function u.getRegions(photo)
 
     local xmp = u.checkXmp(photo)
     local regions = {}
-    
-    --u.log( photo:getFormattedMetadata('sidecars') )
+
+    -- u.log( photo:getFormattedMetadata('sidecars') )
     local nRegionsList = u.findNodeByName(xmp, "RegionList")
 
-    if (nRegionsList ~= nil) then 
+    if (nRegionsList ~= nil) then
 
-        nRegionsList = nRegionsList:childAtIndex(1) 
-        
+        nRegionsList = nRegionsList:childAtIndex(1)
+
         local devSettings = photo:getDevelopSettings()
 
         local d = parseDimensions(photo:getFormattedMetadata("croppedDimensions"))
@@ -396,22 +392,29 @@ function u.getRegions(photo)
             x = devSettings['CropLeft'],
             y = devSettings['CropTop'],
             h = devSettings['CropBottom'] - devSettings['CropTop'],
-            w = devSettings['CropRight'] - devSettings['CropLeft'],
+            w = devSettings['CropRight'] - devSettings['CropLeft']
         }
 
         local region
         local i = 1
         local ci = nRegionsList:childCount()
-        while i<=ci do 
+        while i <= ci do
             region = nRegionsList:childAtIndex(i)
 
-            local nArea = u.findNodeByName( region, "Area" )   
-            local nDescription = u.findNodeByName( region, "Description" )
+            local nArea = u.findNodeByName(region, "Area")
+            local nDescription = u.findNodeByName(region, "Description")
 
-            region = u.getAttributes( nDescription, u.getAttributes( nArea ) )            
+            region = u.getAttributes(nDescription, u.getAttributes(nArea))
 
-            --u.log('check flipped' .. json:encode(region) )
-            --flip when flipped
+            -- u.log('check flipped' .. json:encode(region) )
+            region.x = (region.x - cropRegion.x) / cropRegion.w
+            region.w = region.w / cropRegion.w
+            region.y = (region.y - cropRegion.y) / cropRegion.h
+            region.h = region.h / cropRegion.h
+
+            local inCrop = (region.x >= 0) and (region.x <= 1) and (region.y >= 0) and (region.y <= 1);
+
+            -- flip when flipped
             if region["rotation"] == 1.5708 then
                 local x = region["y"]
                 local w = region["h"]
@@ -419,23 +422,21 @@ function u.getRegions(photo)
                 region["h"] = region["w"]
                 region["x"] = x
                 region["w"] = w
+                region["rotation"] = 0
             end
 
-            region.x = (region.x - cropRegion.x) / cropRegion.w
-            region.w = region.w / cropRegion.w
-            region.y = (region.y - cropRegion.y) / cropRegion.h
-            region.h = region.h / cropRegion.h
-
-            if (region.x >= 0) and (region.x <= 1) and (region.y >= 0) and (region.y <= 1) then
-                regions[#regions+1] = region
+            if inCrop then
+                regions[#regions + 1] = region
+            else
+                u.log('Region out of bounds: ' .. json:encode(region) .. ' | cropRegion: ' .. json:encode(cropRegion))
             end
 
             i = i + 1
         end
 
-        table.sort( regions, function( a, b )
+        table.sort(regions, function(a, b)
             return tonumber(a["x"]) < tonumber(b["x"])
-        end )
+        end)
     end
 
     photo.regions = regions
@@ -443,9 +444,10 @@ function u.getRegions(photo)
     return regions
 end
 
-
 function u.getNames(regions, options)
-    if regions == nil or #regions == 0 then return "" end
+    if regions == nil or #regions == 0 then
+        return ""
+    end
 
     options = options or {}
     options.inter = options.inter or ', '
@@ -453,19 +455,21 @@ function u.getNames(regions, options)
     options.last = options.last or options.inter
     options.before = options.before or ''
     options.after = options.after or ''
-    
+
     local resultStr = ''
 
     if options.unknown == nil then
         local nameRegions = {}
 
         for i, region in pairs(regions) do
-            if region.name ~= nil then nameRegions[#nameRegions + 1] = region end
+            if region.name ~= nil then
+                nameRegions[#nameRegions + 1] = region
+            end
         end
 
         regions = nameRegions
     end
-    
+
     for i, region in pairs(regions) do
 
         if string.find(region.name, " %((WMDE|WMAT|WMCH|WMF)%)") then
@@ -475,20 +479,20 @@ function u.getNames(regions, options)
         if region.name ~= nil then
             -- resultStr = resultStr .. options.before .. region.name .. options.after
 
-            if(options.lang ~= nil) then
-                resultStr = resultStr .. '[[:' .. options.lang..':' .. region.link .. '|'.. region.name .. ']]'
-            elseif(options.returnLink == true) then
+            if (options.lang ~= nil) then
+                resultStr = resultStr .. '[[:' .. options.lang .. ':' .. region.link .. '|' .. region.name .. ']]'
+            elseif (options.returnLink == true) then
                 resultStr = resultStr .. options.before .. region.link .. options.after
             else
                 resultStr = resultStr .. options.before .. region.name .. options.after
             end
-        else 
+        else
             resultStr = resultStr .. options.unknown
         end
 
-        if (i < #regions-1) then
+        if (i < #regions - 1) then
             resultStr = resultStr .. options.inter
-        elseif i ~= #regions then            
+        elseif i ~= #regions then
             resultStr = resultStr .. options.last
         end
     end
@@ -498,36 +502,42 @@ end
 
 function parseDimensions(str)
     local i = string.find(str, "x")
-    if i == nil then return nil end
+    if i == nil then
+        return nil
+    end
     return {
-        width = tonumber( LrStringUtils.trimWhitespace(string.sub(str, 0, i-1))),
-        height = tonumber( LrStringUtils.trimWhitespace(string.sub(str, i+1)))
+        width = tonumber(LrStringUtils.trimWhitespace(string.sub(str, 0, i - 1))),
+        height = tonumber(LrStringUtils.trimWhitespace(string.sub(str, i + 1)))
     }
 end
 
 -- TODO: Filter ImageNotes by the same categories as other names
 function u.getImageNotes(regions, photo)
 
-    local resultStr = ''   
+    local resultStr = ''
     local d = parseDimensions(photo:getFormattedMetadata("croppedDimensions"))
-    
+
     for i, region in pairs(regions) do
         if region.name ~= nil then
-            resultStr = resultStr .. '{{ImageNote|id='.. i .. '|x=' .. math.ceil(region.x * d.width) .. '|y=' .. math.ceil(region.y * d.height) .. '|w=' .. math.ceil(region.w*d.width) .. '|h=' .. math.ceil(region.h * d.height) .. '|dimx='..d.width..'|dimy='..d.height..'|style=1}}' .. region.name .. '{{ImageNoteEnd|id='.. i ..'}}\n'
+            resultStr = resultStr .. '{{ImageNote|id=' .. i .. '|x=' .. math.ceil(region.x * d.width) .. '|y=' ..
+                            math.ceil(region.y * d.height) .. '|w=' .. math.ceil(region.w * d.width) .. '|h=' ..
+                            math.ceil(region.h * d.height) .. '|dimx=' .. d.width .. '|dimy=' .. d.height ..
+                            '|style=1}}' .. region.name .. '{{ImageNoteEnd|id=' .. i .. '}}\n'
         end
     end
-    
+
     return resultStr
 end
 
-function u.copyProps( fromOb, toOb, options )
+function u.copyProps(fromOb, toOb, options)
     toOb = toOb or {}
     options = options or {}
     options.stringsOnly = (options.stringsOnly == true) or false
     options.excludeKeys = options.excludeKeys or {}
-    
-    for key,value in pairs(fromOb) do 
-        if (type(key) ~= 'table') and (type(value) == 'string' or options.stringsOnly ~= true) and (options.excludeKeys[key] ~= true) then
+
+    for key, value in pairs(fromOb) do
+        if (type(key) ~= 'table') and (type(value) == 'string' or options.stringsOnly ~= true) and
+            (options.excludeKeys[key] ~= true) then
             toOb[key] = value
         end
     end
@@ -541,7 +551,7 @@ function u.renderMustache(template, data)
 
     -- Replace \{\{ and \}\} with {{ and }} to keep MediaWiki Templates
     str = str:gsub("\\{\\{", "{{"):gsub("\\}\\}", "}}")
-    
+
     return str
 
     --[[
@@ -626,11 +636,23 @@ function u.renderHandlebars(template, data)
             local s, e, tag, name = tpl:find("{{#([%w%.%_]+)}}", i)
             local s_inv, e_inv, tag_inv, name_inv = tpl:find("{{%^(%w[%w%.%_]*)}}", i)
             if s and (not s_inv or s < s_inv) then
-                table.insert(stack, {name=name, start=e+1, inverted=false, tagStart=s, tagEnd=e})
-                i = e+1
+                table.insert(stack, {
+                    name = name,
+                    start = e + 1,
+                    inverted = false,
+                    tagStart = s,
+                    tagEnd = e
+                })
+                i = e + 1
             elseif s_inv then
-                table.insert(stack, {name=name_inv, start=e_inv+1, inverted=true, tagStart=s_inv, tagEnd=e_inv})
-                i = e_inv+1
+                table.insert(stack, {
+                    name = name_inv,
+                    start = e_inv + 1,
+                    inverted = true,
+                    tagStart = s_inv,
+                    tagEnd = e_inv
+                })
+                i = e_inv + 1
             else
                 local s_end, e_end, end_name = tpl:find("{{/(%w[%w%.%_]*)}}", i)
                 if s_end and #stack > 0 then
@@ -639,20 +661,19 @@ function u.renderHandlebars(template, data)
                         -- Section found
                         local section = {
                             name = last.name,
-                            content = tpl:sub(last.start, s_end-1),
+                            content = tpl:sub(last.start, s_end - 1),
                             inverted = last.inverted,
                             tagStart = last.tagStart,
                             tagEnd = e_end
                         }
                         table.insert(sections, section)
                         -- Replace section in template with a marker
-                        tpl = tpl:sub(1, last.tagStart-1) ..
-                              "{{{__section_"..#sections.."}}}" ..
-                              tpl:sub(e_end+1)
-                        i = last.tagStart + #("{{{__section_"..#sections.."}}}")
+                        tpl = tpl:sub(1, last.tagStart - 1) .. "{{{__section_" .. #sections .. "}}}" ..
+                                  tpl:sub(e_end + 1)
+                        i = last.tagStart + #("{{{__section_" .. #sections .. "}}}")
                     else
                         -- Malformed template
-                        i = e_end+1
+                        i = e_end + 1
                     end
                 else
                     break
@@ -668,7 +689,7 @@ function u.renderHandlebars(template, data)
         -- Render sections first
         for idx, section in ipairs(sections) do
             local rendered = renderSection(section, data, data, section.inverted)
-            parsed_tpl = parsed_tpl:gsub("{{{__section_"..idx.."}}}", rendered)
+            parsed_tpl = parsed_tpl:gsub("{{{__section_" .. idx .. "}}}", rendered)
         end
         -- Render variables, helpers, and helpers with arguments
         parsed_tpl = parsed_tpl:gsub("{{([%w%._]+)%s*([^}]*)}}", function(key, args)
@@ -691,7 +712,7 @@ function u.renderHandlebars(template, data)
                     u.log('helper arg: ' .. a)
                     table.insert(argList, a)
                 end]]
-                u.log('helper['..key..']( '.. json:encode(argList) ..' | >'..args..'< )' );
+                u.log('helper[' .. key .. ']( ' .. json:encode(argList) .. ' | >' .. args .. '< )');
                 -- Provide data as first argument, then parsed args
                 return u.helpers[key](data, unpack(argList))
             end
@@ -719,8 +740,6 @@ function u.renderHandlebars(template, data)
     return render(template, data)
 end
 
-
-
 --------------------------------------------------------------------------------
 -- Strip WikiText Links --------------------------------------------------------
 -- strip the text from WikiText-Links
@@ -734,36 +753,35 @@ end
 --- @return The modified string with wiki links stripped.
 function u.stripWikiLinks(input)
 
-    local function innerReplaceFunc(v1, v2, v3, v4)        
-        --u.log(v1..' | '..(v2 or '')..' | '..(v3 or '')..' | '..(v4 or ''))
-        return v2:match'^%s*(.*%S)' or '' --trim parts
+    local function innerReplaceFunc(v1, v2, v3, v4)
+        -- u.log(v1..' | '..(v2 or '')..' | '..(v3 or '')..' | '..(v4 or ''))
+        return v2:match '^%s*(.*%S)' or '' -- trim parts
     end
 
     local function replaceFunc(v1, v2)
-        --u.log(v1..' | '..(v2 or ''))
-        if v2 ~= "" then 
-            --u.log('return 2 '..v2)
-            return v2 
-        else        
-            --u.log('return 1 '..v1)
+        -- u.log(v1..' | '..(v2 or ''))
+        if v2 ~= "" then
+            -- u.log('return 2 '..v2)
+            return v2
+        else
+            -- u.log('return 1 '..v1)
             local innerOutput = v1:gsub("(:%a%a?:?)([^%(]*)%s*%(?(.-)%)?$", innerReplaceFunc)
             return innerOutput
-        end        
+        end
     end
 
     -- Perform the replacement
     local output = input:gsub("%[%[([^%|%]]+)%|?([^%|%]]*)%]%]", replaceFunc)
-    --u.log('output: '..output)
+    -- u.log('output: '..output)
     return output
 end
-
 
 local LrFileUtils = import 'LrFileUtils'
 local LrTasks = import 'LrTasks'
 local LrApplication = import 'LrApplication'
 local LrPathUtils = import 'LrPathUtils'
 
---TODO: Funktioniert nicht, weil XMP und Katalog nicht mit verschoben werden
+-- TODO: Funktioniert nicht, weil XMP und Katalog nicht mit verschoben werden
 
 function u.renameFile(catalog, photo, newName)
 

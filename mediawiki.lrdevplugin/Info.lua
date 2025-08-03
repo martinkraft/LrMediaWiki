@@ -46,28 +46,36 @@ return {
 			file = "ToolSearchAndReplaceFilename.lua",
 		},
 		{
-			title = "🚀 Generate filename and description from persons",
+			title = "👫 Generate filename and description from persons",
 			file = "ToolGenerateFromPersons.lua",
+            key = "generate_from_persons",
 		},
 		{
-			title = "📄 Set title to file prefix and headline",
+			title = "📝 Set title to file prefix and headline",
 			file = "ToolSetTitleToPrefixAndHeadline.lua",
 		},
 		{
-			title = "📄 Set title to file prefix and caption",
+			title = "📝 Set title to file prefix and caption",
 			file = "ToolSetTitleToPrefixAndCaption.lua",
 		},
 		{
-			title = "📄 Set title to filename (if empty)",
+			title = "📝 Set title to filename (if empty)",
 			file = "ToolSetTitleToFilename.lua",
-		},
-		--[[
-		{
-			title = "❓ Test",
+		},		
+		--[[{
+			title = "❓📷🖼️🎞️🎨🔄↔️⚠️🔓🔒🛠️⚡🏷️📑📰📋✏️ Test",
 			file = "ToolTest.lua",
-		},
-		--]]
+		},]]--
 	},
+
+	LrShortcuts = {
+        {
+            key = "generate_from_persons",
+            mac = "Cmd+Shift+G",
+            win = "Ctrl+Shift+G",
+            title = "Generate from Persons"
+        }
+    },
 
 	VERSION = {
 		major = 1,

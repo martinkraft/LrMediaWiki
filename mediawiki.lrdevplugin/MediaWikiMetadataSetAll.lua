@@ -51,6 +51,10 @@ return {
 		{ pf .. 'otherFields', label = LOC "$$$/LrMediaWiki/Metadata/OtherFields=Other Fields" },
 		{ pf .. 'templates', label = LOC "$$$/LrMediaWiki/Metadata/Templates=Templates" },
 		{ pf .. 'categories', label = LOC "$$$/LrMediaWiki/Metadata/Categories=Categories" },
+		{ pf .. 'vA', label = "Variable A" },
+		{ pf .. 'vB', label = "Variable B" },
+		{ pf .. 'vC', label = "Variable C" },
+		{ pf .. 'textGeneratorTemplate', label = "textGeneratorTemplate" },
 		-- second group
 		'com.adobe.separator',
 		{ 'com.adobe.label', label = 'Artwork' },

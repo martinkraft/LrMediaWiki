@@ -11,6 +11,7 @@ local LrTasks = import 'LrTasks'
 local LrView = import 'LrView'
 local LrXml = import 'LrXml'
 local LrHttp = import 'LrHttp'
+local LrProgressScope = import 'LrProgressScope'
 
 -- Other Libraries
 local Info = require 'Info'
@@ -74,6 +75,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             v1 = '',
             v2 = '',
             v3 = '',
+            v4 = '',
             useNicknames = false
         }
     }
@@ -213,7 +215,8 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             f:edit_field{
                 fill_horizonal = 1,
                 width_in_chars = 40,
-                height_in_lines = 5,
+                height_in_lines = 7,
+                multiline = true,
                 immediate = true,
                 placeholder_string = 'type {{p}} to insert person names',
                 value = LrView.bind('description_other'),
@@ -252,7 +255,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
         },
         f:row{
             margin_top = 10,
-            margin_bottom = 20,
+            margin_bottom = 0,
             f:static_text{
                 width = LrView.share "label_width",
                 title = "Custom variables"
@@ -260,7 +263,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             f:static_text{width = 14, title = "v1"},
             f:edit_field{
                 fill_horizonal = 1,
-                width_in_chars = 11,
+                width_in_chars = 18,
                 immediate = true,
                 placeholder_string = '{{v1}}',
                 value = LrView.bind('v1'),
@@ -269,20 +272,37 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             f:static_text{width = 14, title = "v2"},
             f:edit_field{
                 fill_horizonal = 1,
-                width_in_chars = 11,
+                width_in_chars = 19,
                 immediate = true,
                 placeholder_string = '{{v2}}',
                 value = LrView.bind('v2'),
                 tooltip = "Text to replace {{v2}} in the fields above"
+            }
+        },
+        f:row{
+            margin_top = 0,
+            margin_bottom = 20,
+            f:static_text{
+                width = LrView.share "label_width",
+                title = " "
             },
             f:static_text{width = 14, title = "v3"},
             f:edit_field{
                 fill_horizonal = 1,
-                width_in_chars = 11,
+                width_in_chars = 18,
                 immediate = true,
                 placeholder_string = '{{v3}}',
                 value = LrView.bind('v3'),
                 tooltip = "Text to replace {{v3}} in the fields above"
+            },
+            f:static_text{width = 14, title = "v4"},
+            f:edit_field{
+                fill_horizonal = 1,
+                width_in_chars = 19,
+                immediate = true,
+                placeholder_string = '{{v4}}',
+                value = LrView.bind('v4'),
+                tooltip = "Text to replace {{v4}} in the fields above"
             }
         },
         f:separator{fill_horizontal = 1},
@@ -451,6 +471,21 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
             prefs.generator[key] = props[key]
         end
 
+        -- generate json string of a prefs.generator
+        local generatorJson = json:encode(prefs.generator)
+
+        local progress = LrProgressScope({
+            title = "Generating Texts for Photos...",
+            functionContext = context
+        })
+
+        -- Cleanup-Handler hinzufügen
+        context:addCleanupHandler(function()
+            if progress then
+                progress:done()
+            end
+        end)
+
         local data = LrTasks.startAsyncTask( function()
             local data = ''
 
@@ -458,8 +493,13 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
 
                 local regions = u.getRegions(photo)
                 local fname = u.getNameParts(photo)
+                local regionsSkipped = 0
+                -- TODO: Remove metadata of regions while uploading
 
                 -- filter "_" names
+
+                progress:setPortionComplete(key - 1, #photos)
+                progress:setCaption("Processing Photo " .. key .. " of " .. #photos .. ": " .. fname.name)
 
                 for i = #regions, 1, -1 do
                     local namePreset
@@ -474,10 +514,11 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
 
                     if not firstChar:match("[%w]") then
                         table.remove(regions, i)
+                        regionsSkipped = regionsSkipped + 1
                     else
                         region.link = region.link or region.name
-
                         region.paratheses = region.name:match(" %(([^)]+)%)")
+
                         if region.paratheses then
                             if string.match(region.paratheses, "^:") then
                                 region.paratheses = 'User' .. region.paratheses
@@ -519,6 +560,7 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                         v1 = props.v1 or '',
                         v2 = props.v2 or '',
                         v3 = props.v3 or '',
+                        v4 = props.v4 or '',
                         f = fname.preName or '',
                         y = '',
                         m = '',
@@ -567,6 +609,10 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                         photo:setRawMetadata('title', des);
                         photo:setRawMetadata('caption', des:gsub(fname.preName, '')
                                                 :match('^%s*(.*%S)') or '');
+
+                        --[[if fname.name ~= des then
+                            photo:setRawMetadata('fileName', des)
+                        end]]--
                     end
 
                     if props.description_de_change and props.description_de then
@@ -623,6 +669,8 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                         photo:setPropertyForPlugin(_PLUGIN, 'categories', des)
                     end
 
+                    photo:setPropertyForPlugin(_PLUGIN, 'textGeneratorTemplate', generatorJson);
+
                     --[[
                     if regions[2] then
                         photo:setPropertyForPlugin(_PLUGIN, 
@@ -633,7 +681,14 @@ LrFunctionContext.callWithContext('DescriptionFromPersonsDialog',
                     ]]
 
                 end)
+
+                if progress:isCanceled() then
+                    break
+                end
             end
+            
+            progress:done()
+            progress = nil -- Verhindert doppelten Cleanup
 
             return data
         end)
